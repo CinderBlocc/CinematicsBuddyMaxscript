@@ -1,0 +1,8 @@
+#Directories
+.vs/
+UPLOAD/
+x64/
+TestFiles/
+
+#Files
+*.user
