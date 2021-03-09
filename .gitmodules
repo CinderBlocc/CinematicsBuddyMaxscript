@@ -1,0 +1,4 @@
+[submodule "bakkesmod/data/CinematicsBuddy/Plugins/CinematicsBuddyAssets"]
+	path = bakkesmod/data/CinematicsBuddy/Plugins/CinematicsBuddyAssets
+	url = https://github.com/CinderBlocc/CinematicsBuddyAssets.git
+	branch = main
