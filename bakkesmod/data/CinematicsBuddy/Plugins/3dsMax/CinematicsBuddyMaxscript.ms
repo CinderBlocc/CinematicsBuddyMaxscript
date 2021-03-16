@@ -7,10 +7,7 @@
 			- If they made the script itself a button, would script updates apply to the script that button calls?
 				- If the script gets baked into the button, then the macro to call the real script is what should get baked in
 				
-		- Get rid of image banner from UI?
-			- Avoids potential licensing issues by using RL logo, and avoids weird gamma issues in 2016 version of 3ds max
-			- Or replace it with a transparent png with only white text that says CinematicsBuddy in bold?
-				- Just having it be pure black and pure white would fix gamma issues
+		- Fit window to maximum rollout size when all subrollouts are open
 */
 
 
@@ -19,10 +16,10 @@ ScriptVersion = "0.9.9"
 
 -- Get relative paths
 ScriptLocation = pathConfig.removePathLeaf (getSourceFileName()) + "\\"
+SupportScripts = ScriptLocation + "SupportScripts\\"
 AssetsLocation = ScriptLocation + "..\\CinematicsBuddyAssets\\"
 ImageAssets = AssetsLocation + "Images\\"
 ModelAssets = AssetsLocation + "Models\\"
-SupportScripts = ScriptLocation + "SupportScripts\\"
 
 -- Include and evaluate support files
 fileIn(SupportScripts + "MetadataDummy.ms")
@@ -36,25 +33,23 @@ catch()
 rollout CinematicsBuddyUI "" width:235 height:500
 (	
 	-- Add banner image
-	--@TODO: Make file path relative, and choose image 1 or 2 based on 3ds max version (2016 has gamma issues)
-	local BannerImageFilename = ImageAssets + "CinematicsBuddyBanner.jpg"
-	local BannerImageBitmap = openBitMap(BannerImageFilename)
-	imgTag BannerImage bitmap:BannerImageBitmap pos:[5,9] width:225 height:30.7 opacity:1.0
+	local BannerImageBitmap = openBitMap(ImageAssets + "CinematicsBuddyBanner.jpg")
+	imgTag BannerImage bitmap:BannerImageBitmap pos:[5,5] width:225 height:30.7 opacity:1.0
 	
 	-- Add colored label showing script version
 	local VersionText = "Version: " + ScriptVersion
-	hyperlink VersionLabel VersionText pos:[83,45] color:[125,200,175] enabled:false
+	hyperlink VersionLabel VersionText pos:[83,32] color:[125,200,175] enabled:false
 	
 	-- Create a subrollout that contains all the other subrollouts
-	subrollout RolloutContainer "Rollout Container" pos:[0,80] width:239 height:425
+	subrollout RolloutContainer "Rollout Container" pos:[0,50] width:239 height:425
 )
 
 -- File importing and scene creation --
 rollout Initialize "Import Animation File"
 (
 	-- Buttons to choose file and confirm or cancel import
-	local TooltipFileImport = "Select a CinematicsBuddy animation file that was exported from Rocket League"
-	local TooltipConfirm = "Clicking this button will set FPS to 60 and set system and display units to centimeters. Then it will parse the chosen file."
+	local TooltipFileImport = "Select a Cinematics Buddy animation file that was exported from Rocket League"
+	local TooltipConfirm = "Clicking this button will set FPS to 60 and set system and display units to centimeters. Then it will parse the chosen file and import the objects selected by the Import checkboxes."
 	button ButtonFileImport "Choose File" pos:[3,3] width:71 height:28 tooltip:TooltipFileImport
 	button ButtonConfirmImport "Confirm" pos:[77,3] width:71 height:28 enabled:false tooltip:TooltipConfirm
 	
@@ -88,6 +83,9 @@ rollout Initialize "Import Animation File"
 -- Export selected camera's animation to Rocket League --
 rollout ExportCamera "Export Camera To Rocket League"
 (
+	-- @TODO: Keep the export button disabled unless there is text in the textbox and a SINGLE camera is selected
+		-- Check every time the textbox value changes and every time a selection changes?
+		-- If multiple objects selected, grey out box
 	-- @TODO: Bake camera animation down if it has any constraints
 	
 	local TooltipExportCamera = "Provide a name for the file in the textbox above.\nThe file will export to /bakkesmod/data/CinematicsBuddy/AnimationImports/"
