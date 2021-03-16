@@ -1,3 +1,19 @@
+
+
+/*
+	TODO:
+		- Make a macro script with an included icon that people can add to a toolbar?
+			- The macro would merely call the script itself
+			- If they made the script itself a button, would script updates apply to the script that button calls?
+				- If the script gets baked into the button, then the macro to call the real script is what should get baked in
+				
+		- Get rid of image banner from UI?
+			- Avoids potential licensing issues by using RL logo, and avoids weird gamma issues in 2016 version of 3ds max
+			- Or replace it with a transparent png with only white text that says CinematicsBuddy in bold?
+				- Just having it be pure black and pure white would fix gamma issues
+*/
+
+
 -- Information about the script
 ScriptVersion = "0.9.9"
 
@@ -21,39 +37,38 @@ rollout CinematicsBuddyUI "" width:235 height:500
 (	
 	-- Add banner image
 	--@TODO: Make file path relative, and choose image 1 or 2 based on 3ds max version (2016 has gamma issues)
-	GroupBox BannerOutline pos:[2,0] width:231 height:62.5
-	local BannerImageBitmap = openBitMap(ImageAssets + "CinematicsBuddyMaxscriptBanner2.jpg")
-	imgTag BannerImage bitmap:BannerImageBitmap pos:[5,9] width:225 height:51.12
+	local BannerImageFilename = ImageAssets + "CinematicsBuddyBanner.jpg"
+	local BannerImageBitmap = openBitMap(BannerImageFilename)
+	imgTag BannerImage bitmap:BannerImageBitmap pos:[5,9] width:225 height:30.7 opacity:1.0
 	
 	-- Add colored label showing script version
 	local VersionText = "Version: " + ScriptVersion
-	hyperlink VersionLabel VersionText pos:[83,62] color:[125,200,175] enabled:false
+	hyperlink VersionLabel VersionText pos:[83,45] color:[125,200,175] enabled:false
 	
 	-- Create a subrollout that contains all the other subrollouts
 	subrollout RolloutContainer "Rollout Container" pos:[0,80] width:239 height:425
 )
 
 -- File importing and scene creation --
-rollout Initialize "Import"
+rollout Initialize "Import Animation File"
 (
 	-- Buttons to choose file and confirm or cancel import
 	local TooltipFileImport = "Select a CinematicsBuddy animation file that was exported from Rocket League"
 	local TooltipConfirm = "Clicking this button will set FPS to 60 and set system and display units to centimeters. Then it will parse the chosen file."
 	button ButtonFileImport "Choose File" pos:[3,3] width:71 height:28 tooltip:TooltipFileImport
 	button ButtonConfirmImport "Confirm" pos:[77,3] width:71 height:28 enabled:false tooltip:TooltipConfirm
-	button ButtonCancelImport "Cancel" pos:[151,3] width:71 height:28 enabled:false
 	
 	-- Choose which items should be included in the import. If a scene already exists, only allow camera importing
-	groupbox GroupboxImportTypes "" pos:[3,30] width:220 height:50
-	label LabelImportTypes "Objects to import" pos:[70,40] enabled:false
-	checkbox CheckboxCamera "Camera" checked:true pos:[20,60] enabled:false
-	checkbox CheckboxBall "Ball" checked:true pos:[95,60] enabled:false
-	checkbox CheckboxCars "Cars" checked:true pos:[155,60] enabled:false
+	groupbox GroupboxImportTypes "" pos:[151,-3] width:71 height:76
+	label LabelImportTypes "Import" pos:[170,5] enabled:false
+	checkbox CheckboxCamera "Camera" checked:true pos:[158,20] enabled:false
+	checkbox CheckboxBall "Ball" checked:true pos:[158,37] enabled:false
+	checkbox CheckboxCars "Cars" checked:true pos:[158,54] enabled:false
 	
 	-- Give the camera a name. It will be automatically pulled from the file when it is chosen, but the user can override it here
-	groupbox GroupboxCameraName "" pos:[3,80] width:220 height:50
-	label LabelCameraName "Camera name" pos:[80,90] enabled:false
-	edittext TextboxCameraName "" pos:[5,108] width:210 enabled:false
+	groupbox GroupboxCameraName "" pos:[3,28] width:145 height:45
+	label LabelCameraName "Camera Name" pos:[45,35] enabled:false
+	edittext TextboxCameraName "" pos:[5,51] width:137 enabled:false
 	
 	-- BUTTON METHODS --
 	on ButtonFileImport pressed do
@@ -67,11 +82,6 @@ rollout Initialize "Import"
 		frameRate = 60
 		units.DisplayType = #metric
 		units.SystemType = #Centimeters
-	)
-	
-	on ButtonCancelImport pressed do
-	(
-		
 	)
 )
 
