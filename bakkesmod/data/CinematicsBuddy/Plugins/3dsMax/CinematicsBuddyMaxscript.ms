@@ -30,40 +30,40 @@ try(destroyDialog CinematicsBuddyUI)
 catch()
 
 -- MAIN UI CONTAINER --
-rollout CinematicsBuddyUI "" width:235 height:500
+rollout CinematicsBuddyUI "" width:235 height:315
 (	
 	-- Add banner image
 	local BannerImageBitmap = openBitMap(ImageAssets + "CinematicsBuddyBanner.jpg")
 	imgTag BannerImage bitmap:BannerImageBitmap pos:[5,5] width:225 height:30.7 opacity:1.0
 	
+	-- Create a subrollout that contains all the other subrollouts
+	subrollout RolloutContainer "Rollout Container" pos:[0,35] width:239 height:255
+	
 	-- Add colored label showing script version
 	local VersionText = "Version: " + ScriptVersion
-	hyperlink VersionLabel VersionText pos:[83,32] color:[125,200,175] enabled:false
-	
-	-- Create a subrollout that contains all the other subrollouts
-	subrollout RolloutContainer "Rollout Container" pos:[0,50] width:239 height:425
+	hyperlink VersionLabel VersionText color:[125,200,175] enabled:false align:#center --pos:[83,32]
 )
 
 -- File importing and scene creation --
 rollout Initialize "Import Animation File"
-(
+(	
+	-- Choose which items should be included in the import. If a scene already exists, only allow camera importing
+	groupbox GroupboxImportTypes "" pos:[3,-3] width:71 height:76
+	label LabelImportTypes "Import" pos:[20,5] enabled:false
+	checkbox CheckboxCamera "Camera" checked:true pos:[8,20] enabled:false
+	checkbox CheckboxBall "Ball" checked:true pos:[8,37] enabled:false
+	checkbox CheckboxCars "Cars" checked:true pos:[8,54] enabled:false
+	
 	-- Buttons to choose file and confirm or cancel import
 	local TooltipFileImport = "Select a Cinematics Buddy animation file that was exported from Rocket League"
-	local TooltipConfirm = "Clicking this button will set FPS to 60 and set system and display units to centimeters. Then it will parse the chosen file and import the objects selected by the Import checkboxes."
-	button ButtonFileImport "Choose File" pos:[3,3] width:71 height:28 tooltip:TooltipFileImport
-	button ButtonConfirmImport "Confirm" pos:[77,3] width:71 height:28 enabled:false tooltip:TooltipConfirm
-	
-	-- Choose which items should be included in the import. If a scene already exists, only allow camera importing
-	groupbox GroupboxImportTypes "" pos:[151,-3] width:71 height:76
-	label LabelImportTypes "Import" pos:[170,5] enabled:false
-	checkbox CheckboxCamera "Camera" checked:true pos:[158,20] enabled:false
-	checkbox CheckboxBall "Ball" checked:true pos:[158,37] enabled:false
-	checkbox CheckboxCars "Cars" checked:true pos:[158,54] enabled:false
+	local TooltipConfirm = "Clicking this button will parse the chosen file and import the objects selected by the Import checkboxes. It will also set the FPS to 60 and set the system and display units to centimeters."
+	button ButtonFileImport "Choose File" pos:[78,3] width:71 height:28 tooltip:TooltipFileImport
+	button ButtonConfirmImport "Confirm" pos:[152,3] width:71 height:28 enabled:false tooltip:TooltipConfirm
 	
 	-- Give the camera a name. It will be automatically pulled from the file when it is chosen, but the user can override it here
-	groupbox GroupboxCameraName "" pos:[3,28] width:145 height:45
-	label LabelCameraName "Camera Name" pos:[45,35] enabled:false
-	edittext TextboxCameraName "" pos:[5,51] width:137 enabled:false
+	groupbox GroupboxCameraName "" pos:[78,28] width:145 height:45
+	label LabelCameraName "Camera Name" pos:[120,35] enabled:false
+	edittext TextboxCameraName "" pos:[80,51] width:137 enabled:false
 	
 	-- BUTTON METHODS --
 	on ButtonFileImport pressed do
@@ -86,12 +86,14 @@ rollout ExportCamera "Export Camera To Rocket League"
 	-- @TODO: Keep the export button disabled unless there is text in the textbox and a SINGLE camera is selected
 		-- Check every time the textbox value changes and every time a selection changes?
 		-- If multiple objects selected, grey out box
+		-- This seems helpful: https://forums.cgsociety.org/t/maxscript-detecting-selectionset-change/663841/3
 	-- @TODO: Bake camera animation down if it has any constraints
 	
-	local TooltipExportCamera = "Provide a name for the file in the textbox above.\nThe file will export to /bakkesmod/data/CinematicsBuddy/AnimationImports/"
-	label Instructions "Select a camera and provide a file name" align:#center
-	edittext TextboxFileName "" pos:[3,25] width:215
-	button ButtonExportCamera "Export camera to Rocket League" pos:[7,45] width:210 height:22 tooltip:TooltipExportCamera
+	local TooltipExportCamera = "File will export to /bakkesmod/data/CinematicsBuddy/AnimationImports/"
+	label LabelInstructions1 "1. Select a camera" pos:[3,1]
+	label LabelInstructions2 "2. Provide a file name" pos:[3,14]
+	edittext TextboxFileName "" pos:[0,30] width:148
+	button ButtonExportCamera "3. Export" pos:[152,3] width:70 height:45 enabled:false tooltip:TooltipExportCamera
 	
 	on ButtonExportCamera pressed do
 	(
@@ -103,7 +105,16 @@ rollout ExportCamera "Export Camera To Rocket League"
 rollout ExportAll "Export All To Other 3D Program"
 (
 	-- @TODO: Bake all car body and camera animations down
-	-- Add a few of the FBX settings directly to the 
+	
+	local TooltipChooseDirectory = "Opens a file explorer for you to choose the output directory. The file will be saved as FBX. The cars, ball, and all cameras will be exported"
+	button ButtonChooseDirectory "Export" pos:[152,3] width:70 height:35 tooltip:TooltipChooseDirectory
+	label LabelUpAxis "Up Axis" pos:[60,2]
+	dropdownlist DropdownUpAxis "" items:#("Y-Up", "Z-Up") pos:[3,17] width:145
+	
+	on ButtonChooseDirectory pressed do
+	(
+		
+	)
 )
 
 -- Create the window and add the subrollouts
