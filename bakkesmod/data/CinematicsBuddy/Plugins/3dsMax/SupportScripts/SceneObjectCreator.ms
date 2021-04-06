@@ -10,7 +10,7 @@ struct StructSceneObjects
 	ArenaMesh,
 	BallMesh,
 	CameraObject,
-	CarDummies = #(),
+	CarDummies = #()
 )
 	
 function CreateSceneObjects MetadataDummy CameraName = 

@@ -29,6 +29,7 @@ FileIn(CBSupportScripts + "MetadataDummy.ms")
 FileIn(CBSupportScripts + "CarDummy.ms")
 FileIn(CBSupportScripts + "KeyframeParser.ms")
 FileIn(CBSupportScripts + "HeaderParser.ms")
+FileIn(CBSupportScripts + "SceneObjectCreator.ms")
 
 -- Close any existing windows
 try(DestroyDialog CinematicsBuddyUI)
@@ -117,7 +118,6 @@ rollout Initialize "Import Animation File"
 		-- Loop through all keyframes and apply them
 		local NumKeyframesFound = 0
 		while ApplyNextKeyframe ImportedFile SceneObjects &NumKeyframesFound do ()
-		format "NumKeyframesFound: %\n" NumKeyframesFound
 	)
 )
 
@@ -147,7 +147,7 @@ rollout ExportAll "Export All To Other 3D Program"
 (
 	-- @TODO: Bake all car body and camera animations down
 	
-	local TooltipChooseDirectory = "Opens a file explorer for you to choose the output directory. The file will be saved as FBX. The cars, ball, and all cameras will be exported"
+	local TooltipChooseDirectory = "Opens a file explorer for you to choose the output directory. The file will be saved as FBX. The cars, ball, and all cameras will be exported.\n\nNOTE: This only exports CinematicsBuddy scene assets, not all elements in the scene."
 	button ButtonChooseDirectory "Export" pos:[152,3] width:70 height:35 tooltip:TooltipChooseDirectory
 	label LabelUpAxis "Up Axis" pos:[60,2]
 	dropdownlist DropdownUpAxis "" items:#("Y-Up", "Z-Up") pos:[3,17] width:145

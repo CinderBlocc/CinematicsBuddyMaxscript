@@ -10,6 +10,13 @@ function ApplyNextKeyframe ImportedFile SceneObjects &NumKeyframesFound =
 (
 	NumKeyframesFound += 1
 	
-	if NumKeyframesFound < 5 then (return true)
-	else (return false)
+	if NumKeyframesFound < 5 then
+	(
+		return true
+	)
+	else
+	(
+		format "NumKeyframesFound: %\n" NumKeyframesFound
+		return false
+	)
 )

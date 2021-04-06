@@ -2,9 +2,9 @@
 	-- A list of cars, the ball, arena, etc.
 	-- Replay ID, animation of replay frame, etc
 	
-CreateMetadataDummy() -- REMOVE THIS WHEN DONE
+--CreateMetadataDummy() -- REMOVE THIS WHEN DONE
 	
-function CreateMetadataDummy /*HeaderData*/ =  -- UNCOMMENT "HeaderDataLines" WHEN DONE
+function CreateMetadataDummy HeaderData =
 (
 	-- Delete any existing MetadataDummy objects
 	if $MetadataDummy != undefined do
