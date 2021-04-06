@@ -18,27 +18,28 @@
 global CBScriptVersion = "0.9.9"
 
 -- Get relative paths
-global CBScriptLocation = pathConfig.removePathLeaf (getSourceFileName()) + "\\"
+global CBScriptLocation = PathConfig.RemovePathLeaf (GetSourceFileName()) + "\\"
 global CBSupportScripts = CBScriptLocation + "SupportScripts\\"
 global CBAssetsLocation = CBScriptLocation + "..\\CinematicsBuddyAssets\\"
 global CBImageAssets = CBAssetsLocation + "Images\\"
 global CBModelAssets = CBAssetsLocation + "Models\\"
 
 -- Include and evaluate support files
-fileIn(CBSupportScripts + "MetadataDummy.ms")
-fileIn(CBSupportScripts + "CarDummy.ms")
-fileIn(CBSupportScripts + "KeyframeParser.ms")
+FileIn(CBSupportScripts + "MetadataDummy.ms")
+FileIn(CBSupportScripts + "CarDummy.ms")
+FileIn(CBSupportScripts + "KeyframeParser.ms")
+FileIn(CBSupportScripts + "HeaderParser.ms")
 
 -- Close any existing windows
-try(destroyDialog CinematicsBuddyUI)
+try(DestroyDialog CinematicsBuddyUI)
 catch()
 
 -- MAIN UI CONTAINER --
 rollout CinematicsBuddyUI "" width:235 height:315
 (	
 	-- Add banner image
-	local BannerImageBitmap = openBitMap(CBImageAssets + "CinematicsBuddyBanner.jpg")
-	imgTag BannerImage bitmap:BannerImageBitmap pos:[5,5] width:225 height:30.7 opacity:1.0
+	local BannerImageBitmap = OpenBitMap(CBImageAssets + "CinematicsBuddyBanner.jpg")
+	imgtag BannerImage bitmap:BannerImageBitmap pos:[5,5] width:225 height:30.7 opacity:1.0
 	
 	-- Create a subrollout that contains all the other subrollouts
 	subrollout RolloutContainer "Rollout Container" pos:[0,35] width:239 height:255
@@ -71,44 +72,32 @@ rollout Initialize "Import Animation File"
 	
 	-- LOCAL STORAGE --
 	local ImportedFile
-	local HeaderLines = #()
+	local HeaderData
 	
 	-- BUTTON METHODS --
 	on ButtonFileImport pressed do
 	(
-		local ChosenFile = getOpenFileName caption:"Select file to import"
+		local ChosenFile = GetOpenFileName caption:"Select file to import"
 		if ChosenFile != undefined do
 		(
 			-- Open file and read header lines
-			ImportedFile = openFile ChosenFile
-			while not eof ImportedFile do
+			ImportedFile = OpenFile ChosenFile
+			HeaderData = GetHeaderData(ImportedFile)
+			
+			if HeaderData != undefined do
 			(
-				local TheLine = readline ImportedFile
-				local bIsLastHeaderLine = matchpattern TheLine pattern:"BEGIN ANIMATION"
-				if bIsLastHeaderLine == true do exit
+				--Assign camera name to textbox so user can edit it if they want
+				TextboxCameraName.text = HeaderData.RecordingMetadata.CameraName
 				
-				append HeaderLines TheLine
+				-- Enable the rest of the UI
+				LabelImportTypes.enabled = true
+				CheckboxCamera.enabled = true
+				CheckboxBall.enabled = true
+				CheckboxCars.enabled = true
+				ButtonConfirmImport.enabled = true
+				LabelCameraName.enabled = true
+				TextboxCameraName.enabled = true
 			)
-			
-			-- Pull camera info from header lines to add to UI
-			for TheLine in HeaderLines do
-			(
-				local bIsCameraName = matchpattern TheLine pattern:"Camera: *"
-				if bIsCameraName == true do
-				(
-					local SplitLine = filterstring TheLine ":"
-					TextboxCameraName.text = trimleft SplitLine[2]
-				)
-			)
-			
-			-- Enable the rest of the UI
-			LabelImportTypes.enabled = true
-			CheckboxCamera.enabled = true
-			CheckboxBall.enabled = true
-			CheckboxCars.enabled = true
-			ButtonConfirmImport.enabled = true
-			LabelCameraName.enabled = true
-			TextboxCameraName.enabled = true
 		)
 	)
 	
@@ -119,12 +108,16 @@ rollout Initialize "Import Animation File"
 		units.DisplayType = #metric
 		units.SystemType = #Centimeters
 		
-		-- Parse all of the header data into MetadataDummy
-		local MetadataDummy = CreateMetadataDummy(HeaderLines)
+		-- Create MetadataDummy to store scene information
+		local MetadataDummy = CreateMetadataDummy(HeaderData)
+		
+		-- Create scene objects
+		local SceneObjects = CreateSceneObjects MetadataDummy TextboxCameraName.text
 		
 		-- Loop through all keyframes and apply them
 		local NumKeyframesFound = 0
-		while ApplyNextKeyframe(ImportedFile, MetadataDummy, NumKeyframesFound) do ()
+		while ApplyNextKeyframe ImportedFile SceneObjects &NumKeyframesFound do ()
+		format "NumKeyframesFound: %\n" NumKeyframesFound
 	)
 )
 
@@ -166,7 +159,7 @@ rollout ExportAll "Export All To Other 3D Program"
 )
 
 -- Create the window and add the subrollouts
-createdialog  CinematicsBuddyUI style: #(#style_titlebar, #style_border, #style_sysmenu, #style_minimizebox)
-addsubrollout CinematicsBuddyUI.RolloutContainer Initialize
-addsubrollout CinematicsBuddyUI.RolloutContainer ExportCamera
-addsubrollout CinematicsBuddyUI.RolloutContainer ExportAll
+CreateDialog  CinematicsBuddyUI style: #(#style_titlebar, #style_border, #style_sysmenu, #style_minimizebox)
+AddSubrollout CinematicsBuddyUI.RolloutContainer Initialize
+AddSubrollout CinematicsBuddyUI.RolloutContainer ExportCamera
+AddSubrollout CinematicsBuddyUI.RolloutContainer ExportAll

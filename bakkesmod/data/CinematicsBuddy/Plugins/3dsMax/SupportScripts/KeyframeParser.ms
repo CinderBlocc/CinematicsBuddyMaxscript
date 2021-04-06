@@ -6,7 +6,7 @@
 -- DONT STORE THE DATA, JUST READ AND APPLY IT
 		
 		
-function ApplyNextKeyframe ImportedFile MetadataDummy NumKeyframesFound =
+function ApplyNextKeyframe ImportedFile SceneObjects &NumKeyframesFound =
 (
 	NumKeyframesFound += 1
 	
