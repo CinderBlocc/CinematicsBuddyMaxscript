@@ -6,24 +6,28 @@
 			- The macro would merely call the script itself
 			- If they made the script itself a button, would script updates apply to the script that button calls?
 				- If the script gets baked into the button, then the macro to call the real script is what should get baked in
-				
-		- Fit window to maximum rollout size when all subrollouts are open
+
+	USEFUL LINKS:
+		https://davewortley.wordpress.com/2013/04/21/lesson-12-returning-from-functions/
+		https://help.autodesk.com/view/3DSMAX/2017/ENU/?guid=__files_GUID_B48DA525_F64B_480C_A6E1_3A05D09007F7_htm
+		https://help.autodesk.com/view/3DSMAX/2016/ENU/?guid=__files_GUID_6CF536D8_B90A_4998_AA16_71F23E710B47_htm
 */
 
 
 -- Information about the script
-ScriptVersion = "0.9.9"
+global CBScriptVersion = "0.9.9"
 
 -- Get relative paths
-ScriptLocation = pathConfig.removePathLeaf (getSourceFileName()) + "\\"
-SupportScripts = ScriptLocation + "SupportScripts\\"
-AssetsLocation = ScriptLocation + "..\\CinematicsBuddyAssets\\"
-ImageAssets = AssetsLocation + "Images\\"
-ModelAssets = AssetsLocation + "Models\\"
+global CBScriptLocation = pathConfig.removePathLeaf (getSourceFileName()) + "\\"
+global CBSupportScripts = CBScriptLocation + "SupportScripts\\"
+global CBAssetsLocation = CBScriptLocation + "..\\CinematicsBuddyAssets\\"
+global CBImageAssets = CBAssetsLocation + "Images\\"
+global CBModelAssets = CBAssetsLocation + "Models\\"
 
 -- Include and evaluate support files
-fileIn(SupportScripts + "MetadataDummy.ms")
-fileIn(SupportScripts + "CarDummy.ms")
+fileIn(CBSupportScripts + "MetadataDummy.ms")
+fileIn(CBSupportScripts + "CarDummy.ms")
+fileIn(CBSupportScripts + "KeyframeParser.ms")
 
 -- Close any existing windows
 try(destroyDialog CinematicsBuddyUI)
@@ -33,14 +37,14 @@ catch()
 rollout CinematicsBuddyUI "" width:235 height:315
 (	
 	-- Add banner image
-	local BannerImageBitmap = openBitMap(ImageAssets + "CinematicsBuddyBanner.jpg")
+	local BannerImageBitmap = openBitMap(CBImageAssets + "CinematicsBuddyBanner.jpg")
 	imgTag BannerImage bitmap:BannerImageBitmap pos:[5,5] width:225 height:30.7 opacity:1.0
 	
 	-- Create a subrollout that contains all the other subrollouts
 	subrollout RolloutContainer "Rollout Container" pos:[0,35] width:239 height:255
 	
 	-- Add colored label showing script version
-	local VersionText = "Version: " + ScriptVersion
+	local VersionText = "Version: " + CBScriptVersion
 	hyperlink VersionLabel VersionText color:[125,200,175] enabled:false align:#center --pos:[83,32]
 )
 
@@ -65,10 +69,47 @@ rollout Initialize "Import Animation File"
 	label LabelCameraName "Camera Name" pos:[120,35] enabled:false
 	edittext TextboxCameraName "" pos:[80,51] width:137 enabled:false
 	
+	-- LOCAL STORAGE --
+	local ImportedFile
+	local HeaderLines = #()
+	
 	-- BUTTON METHODS --
 	on ButtonFileImport pressed do
 	(
-		
+		local ChosenFile = getOpenFileName caption:"Select file to import"
+		if ChosenFile != undefined do
+		(
+			-- Open file and read header lines
+			ImportedFile = openFile ChosenFile
+			while not eof ImportedFile do
+			(
+				local TheLine = readline ImportedFile
+				local bIsLastHeaderLine = matchpattern TheLine pattern:"BEGIN ANIMATION"
+				if bIsLastHeaderLine == true do exit
+				
+				append HeaderLines TheLine
+			)
+			
+			-- Pull camera info from header lines to add to UI
+			for TheLine in HeaderLines do
+			(
+				local bIsCameraName = matchpattern TheLine pattern:"Camera: *"
+				if bIsCameraName == true do
+				(
+					local SplitLine = filterstring TheLine ":"
+					TextboxCameraName.text = trimleft SplitLine[2]
+				)
+			)
+			
+			-- Enable the rest of the UI
+			LabelImportTypes.enabled = true
+			CheckboxCamera.enabled = true
+			CheckboxBall.enabled = true
+			CheckboxCars.enabled = true
+			ButtonConfirmImport.enabled = true
+			LabelCameraName.enabled = true
+			TextboxCameraName.enabled = true
+		)
 	)
 	
 	on ButtonConfirmImport pressed do
@@ -77,6 +118,13 @@ rollout Initialize "Import Animation File"
 		frameRate = 60
 		units.DisplayType = #metric
 		units.SystemType = #Centimeters
+		
+		-- Parse all of the header data into MetadataDummy
+		local MetadataDummy = CreateMetadataDummy(HeaderLines)
+		
+		-- Loop through all keyframes and apply them
+		local NumKeyframesFound = 0
+		while ApplyNextKeyframe(ImportedFile, MetadataDummy, NumKeyframesFound) do ()
 	)
 )
 
