@@ -1,9 +1,3 @@
--- Script to create MetadataDummy object that contains information about the scene
-	-- A list of cars, the ball, arena, etc.
-	-- Replay ID, animation of replay frame, etc
-	
---CreateMetadataDummy() -- REMOVE THIS WHEN DONE
-	
 function CreateMetadataDummy HeaderData =
 (
 	-- Delete any existing MetadataDummy objects
@@ -55,9 +49,9 @@ function CreateMetadataDummy HeaderData =
 		)
 		rollout ro_metadata "Replay Metadata"
 		(
-			edittext TextboxReplayName         "Name: "           pos:[5,5]  width: 152 enabled:false
-			edittext TextboxReplayID           "ID:      "        pos:[5,27] width: 152 enabled:false
-			edittext TextboxReplayDate         "Date:  "          pos:[5,49] width: 152 enabled:false
+			edittext TextboxReplayName         "Name: "           pos:[5,5]  width:152 readonly:true
+			edittext TextboxReplayID           "ID:      "        pos:[5,27] width:152 readonly:true
+			edittext TextboxReplayDate         "Date:  "          pos:[5,49] width:152 readonly:true
 			spinner  SpinnerReplayFPS          "FPS:     "        pos:[-18,71]  range:[0,10000,0]   type:#float   width:175 enabled:false
 			spinner  SpinnerReplayFrames       "Replay Frames:  " pos:[ 2, 93]  range:[0,1000000,0] type:#integer width:155 enabled:false
 			spinner  SpinnerReplayCurrentFrame "Current frame: "  pos:[-3, 115] range:[0,1000000,0] type:#integer width:160 enabled:false
@@ -73,16 +67,38 @@ function CreateMetadataDummy HeaderData =
 		)
 		rollout ro_cars "Car Metadata"
 		(
-			edittext TextboxCarName          "Name"               height:100 enabled:false
-			edittext TextboxCarBodyID        "Body ID"            height:100 enabled:false
-			edittext TextboxBackWheelRadius  "Back Wheel Radius"  height:100 enabled:false
-			edittext TextboxFrontWheelRadius "Front Wheel Radius" height:100 enabled:false
+			edittext TextboxCarName          "Name"               width:152 height:100 pos:[5,2]   readonly:true labelontop:true
+			edittext TextboxCarBodyID        "Body ID"            width:152 height:100 pos:[5,125] readonly:true labelontop:true
+			edittext TextboxBackWheelRadius  "Back Wheel Radius"  width:152 height:100 pos:[5,250] readonly:true labelontop:true
+			edittext TextboxFrontWheelRadius "Front Wheel Radius" width:152 height:100 pos:[5,375] readonly:true labelontop:true
+		)
+		
+		-- Arena and ball metadata
+		parameters otherassets rollout:ro_otherassets
+		(
+			OtherArenaName type:#string ui:TextboxArenaName
+			OtherBallName  type:#string ui:TextboxBallName
+		)
+		rollout ro_otherassets "Other Assets"
+		(
+			edittext TextboxArenaName "Arena"    pos:[5,5]  width:152 readonly:true
+			edittext TextboxBallName  "Ball    " pos:[5,27] width:152 readonly:true
 		)
 	)
 	CustAttributes.add TheModifier MetadataModifier
 	
 	-- Assign HeaderData information to the fields in the modifier
-	TheModifier.ReplayName = "Name of replay"
+	TheModifier.CarNames = "0\n1\n2\n3\n4\n5\n6\n7\n8\n9\n10"
+	
+	
+	
+	
+	select MetadataDummy -- REMOVE WHEN DONE
+	/*
+	deselect MetadataDummy
+	freeze MetadataDummy
+	hide MetadataDummy
+	*/
 
 	
 	return MetadataDummy
