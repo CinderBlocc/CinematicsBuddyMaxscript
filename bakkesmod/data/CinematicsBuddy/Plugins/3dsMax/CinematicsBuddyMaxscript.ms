@@ -6,6 +6,11 @@
 			- The macro would merely call the script itself
 			- If they made the script itself a button, would script updates apply to the script that button calls?
 				- If the script gets baked into the button, then the macro to call the real script is what should get baked in
+				
+		- MetadataDummy should store the name of the imported file itself
+		
+		- Once MetadataDummy exists, don't allow importing of Ball and Cars, only new Cameras
+			- When adding a new camera, only add the keyframes that exist within the range of keyframes stored in the existing MetadataDummy
 
 	USEFUL LINKS:
 		https://davewortley.wordpress.com/2013/04/21/lesson-12-returning-from-functions/
@@ -83,7 +88,7 @@ rollout Initialize "Import Animation File"
 		(
 			-- Open file and read header lines
 			ImportedFile = OpenFile ChosenFile
-			HeaderData = GetHeaderData(ImportedFile)
+			HeaderData = GetHeaderData ImportedFile ChosenFile
 			
 			if HeaderData != undefined do
 			(

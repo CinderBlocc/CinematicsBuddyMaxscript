@@ -1,4 +1,10 @@
 -- STRUCT DEFINITIONS --
+struct StructFileMetadata
+(
+	FileName,
+	FilePath
+)
+
 struct StructRecordingMetadata
 (
 	PluginVersion,
@@ -28,6 +34,7 @@ struct StructCarSeen
 
 struct StructHeaderData
 (
+	FileMetadata = StructFileMetadata(),
 	RecordingMetadata = StructRecordingMetadata(),
 	ReplayMetadata = StructReplayMetadata(),
 	CarsSeen = #()
@@ -35,9 +42,10 @@ struct StructHeaderData
 
 
 -- MAIN FUNCTION DEFINITION --
-function GetHeaderData ImportedFile = 
+function GetHeaderData ImportedFile ChosenFile = 
 (
 	local HeaderData = StructHeaderData()
+	HeaderData.FileMetadata = GetFileMetadata(ChosenFile)
 	HeaderData.RecordingMetadata = GetRecordingMetadata(ImportedFile)
 	HeaderData.ReplayMetadata = GetReplayMetadata(ImportedFile)
 	HeaderData.CarsSeen = GetCarsSeen(ImportedFile)
@@ -47,6 +55,36 @@ function GetHeaderData ImportedFile =
 
 
 -- SUPPORT FUNCTION DEFINITIONS --
+function GetFileMetadata ChosenFile = 
+(
+	local FileMetadata = StructFileMetadata()
+	
+	-- Split file path by its folder names
+	local ChosenFileString = ChosenFile as string
+	local ChosenFileElements = FilterString ChosenFileString "\\"
+	
+	-- Compile the folders into a format for the textbox
+	FileMetadata.FilePath = ""
+	local FolderNumber = 1
+	while FolderNumber < ChosenFileElements.count do
+	(
+		-- Add a new line between each entry
+		if FolderNumber > 1 do
+		(
+			FileMetadata.FilePath += "\n"
+		)
+		
+		-- Append the current directory to the file path and move to the next folder
+		FileMetadata.FilePath += ChosenFileElements[FolderNumber]
+		FolderNumber += 1
+	)
+	
+	-- Store the file name
+	FileMetadata.FileName = ChosenFileElements[FolderNumber]	
+	
+	return FileMetadata
+)
+
 function GetRecordingMetadata ImportedFile =
 (
 	local RecordingMetadata = StructRecordingMetadata()

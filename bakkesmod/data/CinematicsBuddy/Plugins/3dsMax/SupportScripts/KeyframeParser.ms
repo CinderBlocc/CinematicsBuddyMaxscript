@@ -4,6 +4,12 @@
 		
 
 -- DONT STORE THE DATA, JUST READ AND APPLY IT
+
+
+-- MetadataDummy values to set per frame:
+	-- ReplayCurrentFrame
+	-- ReplayStartFrame (set on the first frame, then lower it if for some reason they rewound to an earlier frame while recording)
+	-- ReplayEndFrame (same as StartFrame, set it every time there is a higher frame number than the current EndFrame)
 		
 		
 function ApplyNextKeyframe ImportedFile SceneObjects &NumKeyframesFound =

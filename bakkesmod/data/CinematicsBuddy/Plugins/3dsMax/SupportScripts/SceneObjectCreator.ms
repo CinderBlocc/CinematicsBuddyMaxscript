@@ -6,6 +6,8 @@
 	-- Camera
 	
 -- MetadataDummy is stored in here to easily pass into the "ApplyNextKeyframe" function
+
+-- When "Arena" and "Ball" are spawned, assign their names to MetadataDummy
 	
 struct StructSceneObjects
 (

@@ -1,3 +1,5 @@
+-- MetadataDummy stores all information necessary for CinematicsBuddy to function
+
 function CreateMetadataDummy HeaderData =
 (
 	-- Delete any existing MetadataDummy objects
@@ -37,24 +39,48 @@ function CreateMetadataDummy HeaderData =
 			)
 		)
 		
+		-- File metadata
+		parameters fileparams rollout:ro_file
+		(
+			FileName type:#string ui:TextboxFileName
+			FilePath type:#string ui:TextboxFilePath
+		)
+		rollout ro_file "Imported File Metadata"
+		(
+			edittext TextboxFileName "Name " pos:[5,5]  width:152 readonly:true labelontop:true
+			edittext TextboxFilePath "Path"  pos:[5,45] width:152 height:100 readonly:true labelontop:true
+		)
+		
+		-- Keyframe metadata
+		parameters keyframeparams rollout:ro_keyframes
+		(
+			ReplayCurrentFrame type:#integer ui:SpinnerReplayCurrentFrame
+			ReplayStartFrame   type:#integer ui:SpinnerReplayStartFrame
+			ReplayEndFrame     type:#integer ui:SpinnerReplayEndFrame
+		)
+		rollout ro_keyframes "Keyframe Metadata"
+		(
+			spinner  SpinnerReplayCurrentFrame "Current Frame:   " pos:[ 2, 5]  range:[0,1000000,0] type:#integer width:155 enabled:false
+			spinner  SpinnerReplayStartFrame   "Start Frame:  "    pos:[-12,27] range:[0,1000000,0] type:#integer width:169 enabled:false
+			spinner  SpinnerReplayEndFrame     "End Frame:    "    pos:[-12,50] range:[0,1000000,0] type:#integer width:169 enabled:false
+		)
+		
 		-- Replay metadata
-		parameters metadataparams rollout:ro_metadata
+		parameters replayparams rollout:ro_replay
 		(
 			ReplayName         type:#string  ui:TextboxReplayName
 			ReplayID           type:#string  ui:TextboxReplayID
 			ReplayDate         type:#string  ui:TextboxReplayDate
 			ReplayFPS          type:#float   ui:SpinnerReplayFPS
 			ReplayFrames       type:#integer ui:SpinnerReplayFrames
-			ReplayCurrentFrame type:#integer ui:SpinnerReplayCurrentFrame
 		)
-		rollout ro_metadata "Replay Metadata"
+		rollout ro_replay "Replay Metadata"
 		(
-			edittext TextboxReplayName         "Name: "           pos:[5,5]  width:152 readonly:true
-			edittext TextboxReplayID           "ID:      "        pos:[5,27] width:152 readonly:true
-			edittext TextboxReplayDate         "Date:  "          pos:[5,49] width:152 readonly:true
-			spinner  SpinnerReplayFPS          "FPS:     "        pos:[-18,71]  range:[0,10000,0]   type:#float   width:175 enabled:false
-			spinner  SpinnerReplayFrames       "Replay Frames:  " pos:[ 2, 93]  range:[0,1000000,0] type:#integer width:155 enabled:false
-			spinner  SpinnerReplayCurrentFrame "Current frame: "  pos:[-3, 115] range:[0,1000000,0] type:#integer width:160 enabled:false
+			edittext TextboxReplayName         "Name: "            pos:[5,5]  width:152 readonly:true
+			edittext TextboxReplayID           "ID:      "         pos:[5,27] width:152 readonly:true
+			edittext TextboxReplayDate         "Date:  "           pos:[5,49] width:152 readonly:true
+			spinner  SpinnerReplayFPS          "FPS:     "         pos:[-18,71]  range:[0,10000,0]   type:#float   width:175 enabled:false
+			spinner  SpinnerReplayFrames       "Replay Frames:  "  pos:[ 2, 93]  range:[0,1000000,0] type:#integer width:155 enabled:false
 		)
 		
 		-- Cars metadata
@@ -81,25 +107,58 @@ function CreateMetadataDummy HeaderData =
 		)
 		rollout ro_otherassets "Other Assets"
 		(
-			edittext TextboxArenaName "Arena"    pos:[5,5]  width:152 readonly:true
-			edittext TextboxBallName  "Ball    " pos:[5,27] width:152 readonly:true
+			edittext TextboxArenaName "Arena:"    pos:[5,5]  width:152 readonly:true
+			edittext TextboxBallName  "Ball:    " pos:[5,27] width:152 readonly:true
 		)
 	)
 	CustAttributes.add TheModifier MetadataModifier
 	
-	-- Assign HeaderData information to the fields in the modifier
-	TheModifier.CarNames = "0\n1\n2\n3\n4\n5\n6\n7\n8\n9\n10"
+	-- Assign FileMetadata information
+	TheModifier.FileName = HeaderData.FileMetadata.FileName
+	TheModifier.FilePath = HeaderData.FileMetadata.FilePath
 	
+	-- Assign ReplayMetadata information
+	TheModifier.ReplayName   = HeaderData.ReplayMetadata.ReplayName
+	TheModifier.ReplayID     = HeaderData.ReplayMetadata.ID
+	TheModifier.ReplayDate   = HeaderData.ReplayMetadata.Date
+	TheModifier.ReplayFPS    = HeaderData.ReplayMetadata.FPS
+	TheModifier.ReplayFrames = HeaderData.ReplayMetadata.Frames
 	
+	-- Compile strings to assign them in car metadata
+	local CarNamesString = ""
+	local CarBodyIDsString = ""
+	local CarBackWheelRadiiString = ""
+	local CarFrontWheelRadiiString = ""
+	local bFirstCar = true
+	for TheCar in HeaderData.CarsSeen do
+	(
+		-- Add a new line between each entry (after the first entry)
+		if bFirstCar == false do
+		(
+			CarNamesString           += "\n"
+			CarBodyIDsString         += "\n"
+			CarBackWheelRadiiString  += "\n"
+			CarFrontWheelRadiiString += "\n"
+		)
+		bFirstCar = false
+		
+		-- Add this car's info to the respective textbox
+		CarNamesString           += TheCar.PlayerID
+		CarBodyIDsString         += TheCar.BodyID as string
+		CarBackWheelRadiiString  += TheCar.BackWheelRadius as string
+		CarFrontWheelRadiiString += TheCar.FrontWheelRadius as string
+	)
 	
+	-- Put strings in their respective textboxes
+	TheModifier.CarNames             = CarNamesString
+	TheModifier.CarBodyIDs           = CarBodyIDsString
+	TheModifier.CarBackWheelRadii    = CarBackWheelRadiiString
+	TheModifier.CarFrontWheelRadii   = CarFrontWheelRadiiString
 	
-	select MetadataDummy -- REMOVE WHEN DONE
-	/*
+	-- Ensure MetadataDummy is hidden
 	deselect MetadataDummy
 	freeze MetadataDummy
 	hide MetadataDummy
-	*/
-
 	
 	return MetadataDummy
 )
