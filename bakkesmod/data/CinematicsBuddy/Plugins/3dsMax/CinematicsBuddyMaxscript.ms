@@ -31,7 +31,6 @@ global CBModelAssets = CBAssetsLocation + "Models\\"
 
 -- Include and evaluate support files
 FileIn(CBSupportScripts + "MetadataDummy.ms")
-FileIn(CBSupportScripts + "CarDummy.ms")
 FileIn(CBSupportScripts + "KeyframeParser.ms")
 FileIn(CBSupportScripts + "HeaderParser.ms")
 FileIn(CBSupportScripts + "SceneObjectCreator.ms")
