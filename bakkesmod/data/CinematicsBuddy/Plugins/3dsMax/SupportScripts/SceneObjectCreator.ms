@@ -39,15 +39,16 @@ function CreateSceneObjects MetadataDummy CameraName =
 	-- Import car mesh to assign to car dummies
 	local CarLocation = CBModelAssets + "OctaneProxy.FBX"
 	ImportFile CarLocation #noPrompt
-	local CarMesh = $RL_OCTANE_PROXY
-	CarMesh.scale = [1,1,1]
+	local CarMeshBase = $RL_OCTANE_PROXY
+	CarMeshBase.scale = [1,1,1]
 	
 	-- Loop through car names from MetadataDummy and create dummies that hold their respective car data
 	local CarNamesArray = FilterString MetadataModifier.CarNames "\n"
 	local CarIndex = 1
 	while CarIndex <= CarNamesArray.count do
 	(
-		CreateCarDummy MetadataDummy CarIndex CarMesh
+		local NewCarDummy = CreateCarDummy MetadataDummy CarIndex CarMeshBase
+		append CarDummies NewCarDummy
 		CarIndex += 1
 	)
 	

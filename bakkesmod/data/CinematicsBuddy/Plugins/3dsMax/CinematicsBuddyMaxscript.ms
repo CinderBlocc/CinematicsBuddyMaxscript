@@ -6,8 +6,6 @@
 			- The macro would merely call the script itself
 			- If they made the script itself a button, would script updates apply to the script that button calls?
 				- If the script gets baked into the button, then the macro to call the real script is what should get baked in
-				
-		- MetadataDummy should store the name of the imported file itself
 		
 		- Once MetadataDummy exists, don't allow importing of Ball and Cars, only new Cameras
 			- When adding a new camera, only add the keyframes that exist within the range of keyframes stored in the existing MetadataDummy
@@ -151,9 +149,9 @@ rollout ExportAll "Export All To Other 3D Program"
 (
 	-- @TODO: Bake all car body and camera animations down
 	
-	local TooltipChooseDirectory = "Opens a file explorer for you to choose the output directory. The file will be saved as FBX. The cars, ball, and all cameras will be exported.\n\nNOTE: This only exports CinematicsBuddy scene assets, not all elements in the scene."
+	local TooltipChooseDirectory = "Opens a file explorer for you to choose the output directory. The file will be saved as FBX. The cars, ball, and all cameras will be exported.\n\nNOTE 1: This only exports CinematicsBuddy scene assets, not all elements in the scene.\n\nNOTE 2: Generally this should only be used just after importing the scene so that the raw CinematicsBuddy content can be exported. Behavior is undefined if you edit the scene before exporting."
 	button ButtonChooseDirectory "Export" pos:[152,3] width:70 height:35 tooltip:TooltipChooseDirectory
-	label LabelUpAxis "Up Axis" pos:[60,2]
+	label LabelUpAxis "Up Axis" pos:[58,2]
 	dropdownlist DropdownUpAxis "" items:#("Y-Up", "Z-Up") pos:[3,17] width:145
 	
 	on ButtonChooseDirectory pressed do

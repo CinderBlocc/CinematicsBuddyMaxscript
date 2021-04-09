@@ -111,7 +111,7 @@ function CreateMetadataDummy HeaderData =
 			edittext TextboxBallName  "Ball:    " pos:[5,27] width:152 readonly:true
 		)
 	)
-	CustAttributes.add TheModifier MetadataModifier
+	CustAttributes.Add TheModifier MetadataModifier
 	
 	-- Assign FileMetadata information
 	TheModifier.FileName = HeaderData.FileMetadata.FileName
