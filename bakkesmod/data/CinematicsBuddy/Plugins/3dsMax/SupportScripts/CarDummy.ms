@@ -1,8 +1,13 @@
--- Script to create car dummy object
--- Dummy object will have the car mesh as a child, and will contain all the special data
-	-- i.e. suspension distance animation, boost toggle, etc.
+/*
+	TODO:
+	-- CAR INDEX SPINNER VALUE SHOULD MATCH THE INDEX FROM CARS SEEN IN THE TEXT FILE
+		-- It should not match the CarIndex from the SceneObjects.CarDummies array
+			-- Actually wouldn't that just be that array's CarIndex - 1?
+			-- This creates a dummy for each CarSeen, not for the potentially-missing-cars each frame, so indices should match
+				-- Offset by 1 because maxscript is dumb and starts indices at 1 instead of 0
+*/
 	
-CreateCarDummy undefined 1 undefined
+CreateCarDummy undefined 1 undefined -- REMOVE WHEN DONE
 	
 function CreateCarDummy MetadataDummy CarIndex CarMeshBase =
 (
@@ -13,12 +18,13 @@ function CreateCarDummy MetadataDummy CarIndex CarMeshBase =
 	/*
 	-- Get information about this car from MetadataDummy
 	local CarInfo = GetCarInfo MetadataDummy CarIndex
-	local CarIndexString = CarIndex as string
-	local CarNameBase = CarIndexString + ":" + CarInfo.CarName
-	*/local CarNameBase = "CarNameBase"
+	*/
+	
+	local CarInfo = StructCarInfo() -- REMOVE WHEN DONE
+	CarInfo.CarName = "CarNameBase" -- REMOVE WHEN DONE
 	
 	-- Create DummyObject
-	local DummyObjectName = CarNameBase + " DUMMY"
+	local DummyObjectName = CarInfo.CarName + " DUMMY"
 	local DummyObject = PointHelperObj name:DummyObjectName cross: true box: false size: 100 wirecolor:[14,255,2]
 	
 	-- Add custom attributes
@@ -31,6 +37,7 @@ function CreateCarDummy MetadataDummy CarIndex CarMeshBase =
 		parameters metadataparams rollout:ro_metadata
 		(
 			CarName             type:#string  ui:TextBoxCarName
+			CarsSeenIndex       type:#integer ui:SpinnerCarsSeenIndex
 			CarBodyID           type:#integer ui:SpinnerCarBodyID
 			CarBackWheelRadius  type:#float   ui:SpinnerBackWheelRadius
 			CarFrontWheelRadius type:#float   ui:SpinnerFrontWheelRadius
@@ -38,9 +45,10 @@ function CreateCarDummy MetadataDummy CarIndex CarMeshBase =
 		rollout ro_metadata "Metadata"
 		(
 			edittext TextboxCarName          "Name"               width:152 pos:[5,2]    readonly:true
-			spinner  SpinnerCarBodyID        "Body ID"            width:179 pos:[-22,23] type:#integer enabled:false
-			spinner  SpinnerBackWheelRadius  "Back Wheel Radius " width:142 pos:[15,43]  type:#float   enabled:false
-			spinner  SpinnerFrontWheelRadius "Front Wheel Radius" width:140 pos:[17,63]  type:#float   enabled:false
+			spinner  SpinnerCarsSeenIndex    "Index   "           width:178 pos:[-21,23] type:#integer enabled:false
+			spinner  SpinnerCarBodyID        "Body ID"            width:179 pos:[-22,43] type:#integer enabled:false
+			spinner  SpinnerBackWheelRadius  "Back Wheel Radius " width:142 pos:[15,63]  type:#float   enabled:false
+			spinner  SpinnerFrontWheelRadius "Front Wheel Radius" width:140 pos:[17,83]  type:#float   enabled:false
 		)
 		
 		-- Animation data
@@ -50,7 +58,7 @@ function CreateCarDummy MetadataDummy CarIndex CarMeshBase =
 			Wheel0_SteerAmount    type:#float   ui:Spinner_W0_SteerAmount
 			Wheel0_SuspensionDist type:#float   ui:Spinner_W0_SuspensionDist
 			Wheel0_SpinSpeed      type:#float   ui:Spinner_W0_SpinSpeed
-			/*Wheel1_SteerAmount    type:#float   ui:Spinner_W1_SteerAmount
+			Wheel1_SteerAmount    type:#float   ui:Spinner_W1_SteerAmount
 			Wheel1_SuspensionDist type:#float   ui:Spinner_W1_SuspensionDist
 			Wheel1_SpinSpeed      type:#float   ui:Spinner_W1_SpinSpeed
 			Wheel2_SteerAmount    type:#float   ui:Spinner_W2_SteerAmount
@@ -58,25 +66,43 @@ function CreateCarDummy MetadataDummy CarIndex CarMeshBase =
 			Wheel2_SpinSpeed      type:#float   ui:Spinner_W2_SpinSpeed
 			Wheel3_SteerAmount    type:#float   ui:Spinner_W3_SteerAmount
 			Wheel3_SuspensionDist type:#float   ui:Spinner_W3_SuspensionDist
-			Wheel3_SpinSpeed      type:#float   ui:Spinner_W3_SpinSpeed*/
+			Wheel3_SpinSpeed      type:#float   ui:Spinner_W3_SpinSpeed
 		)
 		rollout ro_animation "Animation Data"
 		(
-			checkbox CheckboxIsBoosting "Boosting" align:#center
-			label LabelWheel0 "------------- WHEEL 0 ------------- " align:#center
-			spinner Spinner_W0_SteerAmount    "Steer Amount"
-			spinner Spinner_W0_SuspensionDist "Suspension Distance"
-			spinner Spinner_W0_SpinSpeed      "Spin Speed" pos:[5, 200]
-			label LabelWheel1 "------------- WHEEL 1 ------------- " align:#center
+			checkbox CheckboxIsBoosting "Boosting" align:#center enabled:false
+			label Label_W0 "------------- WHEEL 0 ------------- " align:#center
+			spinner Spinner_W0_SteerAmount    "Steer Amount          "    pos:[19,45]  width:139 enabled:false
+			spinner Spinner_W0_SuspensionDist "Suspension Distance"       pos:[23,65]  width:135 enabled:false
+			spinner Spinner_W0_SpinSpeed      "Spin Speed               " pos:[21,85]  width:137 enabled:false
+			label Label_W1 "------------- WHEEL 1 ------------- " align:#center
+			spinner Spinner_W1_SteerAmount    "Steer Amount          "    pos:[19,122] width:139 enabled:false
+			spinner Spinner_W1_SuspensionDist "Suspension Distance"       pos:[23,142] width:135 enabled:false
+			spinner Spinner_W1_SpinSpeed      "Spin Speed               " pos:[21,162] width:137 enabled:false
+			label Label_W2 "------------- WHEEL 2 ------------- " align:#center
+			spinner Spinner_W2_SteerAmount    "Steer Amount          "    pos:[19,200] width:139 enabled:false
+			spinner Spinner_W2_SuspensionDist "Suspension Distance"       pos:[23,220] width:135 enabled:false
+			spinner Spinner_W2_SpinSpeed      "Spin Speed               " pos:[21,240] width:137 enabled:false
+			label Label_W3 "------------- WHEEL 3 ------------- " align:#center
+			spinner Spinner_W3_SteerAmount    "Steer Amount          "    pos:[19,278] width:139 enabled:false
+			spinner Spinner_W3_SuspensionDist "Suspension Distance"       pos:[23,298] width:135 enabled:false
+			spinner Spinner_W3_SpinSpeed      "Spin Speed               " pos:[21,318] width:137 enabled:false
 		)
 	)
 	CustAttributes.Add TheModifier CarDataModifier
 	
 	/*
+	-- Store metadata
+	TheModifier.CarName = CarInfo.CarName
+	TheModifier.CarsSeenIndex = FRIG OFF LAHEY
+	TheModifier.CarBodyID = CarInfo.BodyID
+	TheModifier.CarBackWheelRadius = CarInfo.BackWheelRadius
+	TheModifier.CarFrontWheelRadius = CarInfo.FrontWheelRadius
+	
 	-- Clone car mesh and parent it to DummyObject. CarMeshNode is created in the CloneNodes call
 	MaxOps.CloneNodes CarMeshBase cloneType:#copy newNodes:&CarMeshNode #nodialog
 	local CarMesh = CarMeshNode[1]
-	CarMesh.name = CarNameBase + " MESH"
+	CarMesh.name = CarInfo.CarName + " MESH"
 	CarMesh.parent = DummyObject
 	
 	DummyObject.pos = [150 * CarIndex, 0, 17] -- REMOVE WHEN DONE
