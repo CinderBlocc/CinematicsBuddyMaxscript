@@ -35,10 +35,10 @@ FileIn(CBSupportScripts + "UtilityFunctions.ms")
 
 
 -- STRUCT DEFINITIONS --
-struct StructBallKeyframe
+struct StructTimeKeyframe
 (
-	BallLocation,
-	BallRotation
+	RealTime,
+	ReplayFrame
 )
 
 struct StructCameraKeyframe
@@ -46,6 +46,12 @@ struct StructCameraKeyframe
 	CameraLocation,
 	CameraRotation,
 	CameraFieldOfView
+)
+
+struct StructBallKeyframe
+(
+	BallLocation,
+	BallRotation
 )
 
 struct StructWheelKeyframe
@@ -65,12 +71,6 @@ struct StructCarKeyframe
 	WheelKeyframes = #()
 )
 
-struct StructTimeKeyframe
-(
-	RealTime,
-	ReplayFrame
-)
-
 struct StructKeyframeData
 (
 	TimeKeyframe,
@@ -80,7 +80,51 @@ struct StructKeyframeData
 )
 
 
--- SUPPORT FUNCTION DEFINITIONS --
+-- DATA GETTER FUNCTION DEFINITIONS --
+function GetTimeKeyframe ImportedFile = 
+(
+	local TimeKeyframe = StructTimeKeyframe()
+	
+	return TimeKeyframe
+)
+
+function GetCameraKeyframe ImportedFile = 
+(
+	local CameraKeyframe = StructCameraKeyframe()
+	
+	return CameraKeyframe
+)
+
+function GetBallKeyframe ImportedFile =
+(
+	local BallKeyframe = StructBallKeyframe()
+	
+	return BallKeyframe
+)
+
+function GetWheelKeyframe ImportedFile = 
+(
+	local WheelKeyframe = StructWheelKeyframe()
+	
+	return WheelKeyframe
+)
+
+function GetCarKeyframe ImportedFile = 
+(
+	-- IMPORTANT: When getting the car, its index starts at 0 in the animation file. Add 1 to the index to access the car from SceneObjects by index
+	-- Maxscript starts at index 1
+	
+	local CarKeyframe = StructCarKeyframe()
+	
+	return CarKeyframe
+)
+
+
+-- DATA SETTER FUNCTION DEFINITION --
+function ApplyKeyframe KeyframeData SceneObjects = 
+(
+	
+)
 
 
 -- MAIN FUNCTION DEFINITION --
@@ -112,14 +156,10 @@ function ApplyNextKeyframe ImportedFile SceneObjects &NumKeyframesFound =
 		local SplitLine = GetSplitDataLine(ThisLine)
 		case SplitLine.LineLabel of
 		(
-			"B":  KeyframeData.BallData   = GetBallData(ImportedFile)
 			"CM": KeyframeData.CameraData = GetCameraData(ImportedFile)
-			
-			-- IMPORTANT: When getting the car, its index starts at 0 in the animation file. Add 1 to the index to access the car from SceneObjects by index
-			-- Maxscript starts at index 1
-			"CR": KeyframeData.CarsData   = GetCarsData(ImportedFile)
-			
 			"T":  KeyframeData.TimeData   = GetTimeData(ImportedFile)
+			"B":  KeyframeData.BallData   = GetBallData(ImportedFile)
+			"CR": KeyframeData.CarsData   = GetCarsData(ImportedFile)
 			"}":  exit
 		)
 	)
