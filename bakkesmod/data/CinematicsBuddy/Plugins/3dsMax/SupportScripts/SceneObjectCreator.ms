@@ -1,3 +1,5 @@
+-- SceneObjectCreator creates the objects necessary to rebuild the Rocket League scene inside 3ds Max.
+
 -- Import CarDummy script so its functions can be called
 FileIn(CBSupportScripts + "CarDummy.ms")
 	
@@ -43,17 +45,25 @@ function CreateSceneObjects MetadataDummy CameraName =
 	CarMeshBase.scale = [1,1,1]
 	
 	-- Loop through car names from MetadataDummy and create dummies that hold their respective car data
+	-- IMPORTANT: Maxscript starts with index 1, but the CarsSeen array starts at 0. This is handled internally in CreateCarDummy
 	local CarNamesArray = FilterString MetadataModifier.CarNames "\n"
 	local CarIndex = 1
 	while CarIndex <= CarNamesArray.count do
 	(
 		local NewCarDummy = CreateCarDummy MetadataDummy CarIndex CarMeshBase
-		append CarDummies NewCarDummy
+		
+		
+		
+		NewCarDummy.pos = [0, 150 * CarIndex, 17] -- REMOVE WHEN DONE
+		
+		
+		
+		append SceneObjects.CarDummies NewCarDummy
 		CarIndex += 1
 	)
 	
 	-- Delete original car mesh as all the dummies made their own clones
-	delete CarMesh
+	delete CarMeshBase
 	
 	return SceneObjects
 )

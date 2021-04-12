@@ -1,4 +1,4 @@
--- MetadataDummy stores all information necessary for CinematicsBuddy to function
+-- MetadataDummy stores all information necessary for CinematicsBuddy to function.
 
 function CreateMetadataDummy HeaderData =
 (

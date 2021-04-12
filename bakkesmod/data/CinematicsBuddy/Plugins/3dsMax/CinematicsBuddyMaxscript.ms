@@ -1,4 +1,7 @@
-
+-- CinematicsBuddyMaxscript does the following:
+	-- Imports a CinematicsBuddy animation file and rebuilds the scene in the viewport
+	-- Exports an animated camera back to Rocket League
+	-- Exports rebuilt scene to an animated FBX file to be transferred to other 3D software
 
 /*
 	TODO:
@@ -9,11 +12,10 @@
 		
 		- Once MetadataDummy exists, don't allow importing of Ball and Cars, only new Cameras
 			- When adding a new camera, only add the keyframes that exist within the range of keyframes stored in the existing MetadataDummy
-
-	USEFUL LINKS:
-		https://davewortley.wordpress.com/2013/04/21/lesson-12-returning-from-functions/
-		https://help.autodesk.com/view/3DSMAX/2017/ENU/?guid=__files_GUID_B48DA525_F64B_480C_A6E1_3A05D09007F7_htm
-		https://help.autodesk.com/view/3DSMAX/2016/ENU/?guid=__files_GUID_6CF536D8_B90A_4998_AA16_71F23E710B47_htm
+			
+		- Re-order all scripts so that they dont use structs/functions that aren't defined before a function call
+			- i.e. in HeaderParser, move GetHeaderData to the very bottom so all support functions are defined before they're called
+			- If it isn't set up like this, the script will always fail the first time it is run when 3ds max has started
 */
 
 

@@ -1,27 +1,37 @@
-/*
-	TODO:
-	-- CAR INDEX SPINNER VALUE SHOULD MATCH THE INDEX FROM CARS SEEN IN THE TEXT FILE
-		-- It should not match the CarIndex from the SceneObjects.CarDummies array
-			-- Actually wouldn't that just be that array's CarIndex - 1?
-			-- This creates a dummy for each CarSeen, not for the potentially-missing-cars each frame, so indices should match
-				-- Offset by 1 because maxscript is dumb and starts indices at 1 instead of 0
-*/
-	
-CreateCarDummy undefined 1 undefined -- REMOVE WHEN DONE
-	
-function CreateCarDummy MetadataDummy CarIndex CarMeshBase =
+-- CarDummy stores car metadata, and animation data for boost and wheels. A placeholder car mesh is parented to the dummy.
+
+-- INFORMATION FROM METADATADUMMY --
+struct StructCarInfo
 (
-	-- Use MetadataDummy to collect the information about the car
-		-- CarIndex is passed in from the loop in SceneObjectCreator to indicate which car's information to take from MetadataDummy
-	-- CarMesh is the single mesh that was imported. Make a clone and make it a child of the dummy object
+	CarName,
+	BodyID,
+	BackWheelRadius,
+	FrontWheelRadius
+)
+
+function GetCarInfo MetadataDummy CarIndex =
+(
+	local CarInfo = StructCarInfo()
 	
-	/*
+	local MetadataModifier = MetadataDummy.modifiers[1]
+	local CarNames = FilterString MetadataModifier.CarNames "\n"
+	local BodyIDs = FilterString MetadataModifier.CarBodyIDs "\n"
+	local BackWheelRadii = FilterString MetadataModifier.CarBackWheelRadii "\n"
+	local FrontWheelRadii = FilterString MetadataModifier.CarFrontWheelRadii "\n"
+	
+	CarInfo.CarName = CarNames[CarIndex]
+	CarInfo.BodyID = BodyIDs[CarIndex] as integer
+	CarInfo.BackWheelRadius = BackWheelRadii[CarIndex] as float
+	CarInfo.FrontWheelRadius = FrontWheelRadii[CarIndex] as float
+	
+	return CarInfo
+)
+
+-- MAIN FUNCTION DEFINITION --
+function CreateCarDummy MetadataDummy CarIndex CarMeshBase =
+(	
 	-- Get information about this car from MetadataDummy
 	local CarInfo = GetCarInfo MetadataDummy CarIndex
-	*/
-	
-	local CarInfo = StructCarInfo() -- REMOVE WHEN DONE
-	CarInfo.CarName = "CarNameBase" -- REMOVE WHEN DONE
 	
 	-- Create DummyObject
 	local DummyObjectName = CarInfo.CarName + " DUMMY"
@@ -91,10 +101,9 @@ function CreateCarDummy MetadataDummy CarIndex CarMeshBase =
 	)
 	CustAttributes.Add TheModifier CarDataModifier
 	
-	/*
-	-- Store metadata
+	-- Store metadata. Match stored car index to the index in the file
 	TheModifier.CarName = CarInfo.CarName
-	TheModifier.CarsSeenIndex = FRIG OFF LAHEY
+	TheModifier.CarsSeenIndex = CarIndex - 1
 	TheModifier.CarBodyID = CarInfo.BodyID
 	TheModifier.CarBackWheelRadius = CarInfo.BackWheelRadius
 	TheModifier.CarFrontWheelRadius = CarInfo.FrontWheelRadius
@@ -105,36 +114,6 @@ function CreateCarDummy MetadataDummy CarIndex CarMeshBase =
 	CarMesh.name = CarInfo.CarName + " MESH"
 	CarMesh.parent = DummyObject
 	
-	DummyObject.pos = [150 * CarIndex, 0, 17] -- REMOVE WHEN DONE
-	
 	return DummyObject
-	*/select DummyObject
-)
-
--- INFORMATION FROM METADATADUMMY --
-struct StructCarInfo
-(
-	CarName,
-	BodyID,
-	BackWheelRadius,
-	FrontWheelRadius
-)
-
-function GetCarInfo MetadataDummy CarIndex =
-(
-	local CarInfo = StructCarInfo()
-	
-	local MetadataModifier = MetadataDummy.modifiers[1]
-	local CarNames = FilterString MetadataModifier.CarNames "\n"
-	local BodyIDs = FilterString MetadataModifier.CarBodyIDs "\n"
-	local BackWheelRadii = FilterString MetadataModifier.CarBackWheelRadii "\n"
-	local FrontWheelRadii = FilterString MetadataModifier.CarFrontWheelRadii "\n"
-	
-	CarInfo.CarName = CarNames[CarIndex]
-	CarInfo.BodyID = BodyIDs[CarIndex] as integer
-	CarInfo.BackWheelRadius = BackWheelRadii[CarIndex] as float
-	CarInfo.FrontWheelRadius = FrontWheelRadii[CarIndex] as float
-	
-	return CarInfo
 )
 	

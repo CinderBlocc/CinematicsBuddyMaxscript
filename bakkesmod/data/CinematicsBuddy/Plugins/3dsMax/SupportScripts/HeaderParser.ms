@@ -1,3 +1,9 @@
+-- HeaderParser reads through the whole file header and extracts necessary data.
+
+-- Import UtilityFunctions script so its functions can be called
+FileIn(CBSupportScripts + "UtilityFunctions.ms")
+
+
 -- STRUCT DEFINITIONS --
 struct StructFileMetadata
 (
@@ -38,19 +44,6 @@ struct StructHeaderData
 	RecordingMetadata = StructRecordingMetadata(),
 	ReplayMetadata = StructReplayMetadata(),
 	CarsSeen = #()
-)
-
-
--- MAIN FUNCTION DEFINITION --
-function GetHeaderData ImportedFile ChosenFile = 
-(
-	local HeaderData = StructHeaderData()
-	HeaderData.FileMetadata = GetFileMetadata(ChosenFile)
-	HeaderData.RecordingMetadata = GetRecordingMetadata(ImportedFile)
-	HeaderData.ReplayMetadata = GetReplayMetadata(ImportedFile)
-	HeaderData.CarsSeen = GetCarsSeen(ImportedFile)
-	
-	return HeaderData
 )
 
 
@@ -97,7 +90,7 @@ function GetRecordingMetadata ImportedFile =
 		local ThisLine = ReadLine ImportedFile
 		if ThisLine.count == 0 do exit
 		
-		local SplitLine = GetSplitHeaderLine(ThisLine)
+		local SplitLine = GetSplitDataLine(ThisLine)
 		case SplitLine.LineLabel of
 		(
 			"Version":     RecordingMetadata.PluginVersion = SplitLine.LineValue
@@ -123,7 +116,7 @@ function GetReplayMetadata ImportedFile =
 		local ThisLine = ReadLine ImportedFile
 		if ThisLine.count == 0 do exit
 		
-		local SplitLine = GetSplitHeaderLine(ThisLine)
+		local SplitLine = GetSplitDataLine(ThisLine)
 		case SplitLine.LineLabel of
 		(
 			"Name":   ReplayMetadata.ReplayName = SplitLine.LineValue
@@ -135,6 +128,44 @@ function GetReplayMetadata ImportedFile =
 	)
 	
 	return ReplayMetadata
+)
+
+function GetCarSeen ImportedFile = 
+(
+	local CarSeen = StructCarSeen()
+	
+	-- Get the CarsSeen index for this car. Return if it is past the last car in the list
+	local IndexLine = ReadLine ImportedFile
+	local bIsEndOfList = MatchPattern IndexLine pattern:"}"
+	if bIsEndOfList then
+	(
+		return undefined
+	)
+	else
+	(
+		-- Get the index of this car from the array of CarsSeen (starting index 0)
+		local SplitIndexLine = GetSplitDataLine(IndexLine)
+		CarSeen.CarIndex = SplitIndexLine.LineLabel as integer
+	)
+	
+	-- Get the other data for this car
+	while not eof ImportedFile do
+	(
+		local ThisLine = ReadLine ImportedFile
+		if ThisLine.count == 0 do exit
+		
+		local SplitLine = GetSplitDataLine(ThisLine)
+		case SplitLine.LineLabel of
+		(
+			"ID":                 CarSeen.PlayerID         = SplitLine.LineValue
+			"Body":               CarSeen.BodyID           = SplitLine.LineValue as integer
+			"Front Wheel Radius": CarSeen.FrontWheelRadius = SplitLine.LineValue as float
+			"Back Wheel Radius":  CarSeen.BackWheelRadius  = SplitLine.LineValue as float
+			"}": exit
+		)
+	)
+	
+	return CarSeen
 )
 
 function GetCarsSeen ImportedFile =
@@ -155,63 +186,15 @@ function GetCarsSeen ImportedFile =
 	return CarsSeen
 )
 
-function GetCarSeen ImportedFile = 
-(
-	local CarSeen = StructCarSeen()
-	
-	-- Get the CarsSeen index for this car. Return if it is past the last car in the list
-	local IndexLine = ReadLine ImportedFile
-	local bIsEndOfList = MatchPattern IndexLine pattern:"}"
-	if bIsEndOfList then
-	(
-		return undefined
-	)
-	else
-	(
-		local SplitIndexLine = GetSplitHeaderLine(IndexLine)
-		CarSeen.CarIndex = SplitIndexLine.LineLabel as integer
-	)
-	
-	-- Get the other data for this car
-	while not eof ImportedFile do
-	(
-		local ThisLine = ReadLine ImportedFile
-		if ThisLine.count == 0 do exit
-		
-		local SplitLine = GetSplitHeaderLine(ThisLine)
-		case SplitLine.LineLabel of
-		(
-			"ID":                 CarSeen.PlayerID         = SplitLine.LineValue
-			"Body":               CarSeen.BodyID           = SplitLine.LineValue as integer
-			"Front Wheel Radius": CarSeen.FrontWheelRadius = SplitLine.LineValue as float
-			"Back Wheel Radius":  CarSeen.BackWheelRadius  = SplitLine.LineValue as float
-			"}": exit
-		)
-	)
-	
-	return CarSeen
-)
 
-
--- UTILITY DEFINITIONS --
-struct StructSplitHeaderLine
+-- MAIN FUNCTION DEFINITION --
+function GetHeaderData ImportedFile ChosenFile = 
 (
-	LineLabel,
-	LineValue = undefined
-)
-
-function GetSplitHeaderLine HeaderLine =
-(
-	local SplitHeaderLine = StructSplitHeaderLine()
+	local HeaderData = StructHeaderData()
+	HeaderData.FileMetadata = GetFileMetadata(ChosenFile)
+	HeaderData.RecordingMetadata = GetRecordingMetadata(ImportedFile)
+	HeaderData.ReplayMetadata = GetReplayMetadata(ImportedFile)
+	HeaderData.CarsSeen = GetCarsSeen(ImportedFile)
 	
-	local TrimmedLine = TrimLeft HeaderLine
-	local SplitLine = FilterString TrimmedLine ":"
-	
-	SplitHeaderLine.LineLabel = SplitLine[1]
-	if SplitLine.count > 1 do
-	(
-		SplitHeaderLine.LineValue = TrimLeft SplitLine[2]
-	)
-	
-	return SplitHeaderLine
+	return HeaderData
 )
