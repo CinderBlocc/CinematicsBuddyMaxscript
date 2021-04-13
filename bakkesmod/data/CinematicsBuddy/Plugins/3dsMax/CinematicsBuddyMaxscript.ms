@@ -5,6 +5,8 @@
 
 /*
 	TODO:
+		- Why is the first frame wack for all the cars?
+		
 		- Parent the ball to a dummy and animate the dummy position?
 			- That way you could assign a constant corrective rotation to the ball without interfering with the animation
 		
@@ -18,9 +20,15 @@
 		- Once MetadataDummy exists, don't allow importing of Ball and Cars, only new Cameras
 			- When adding a new camera, only add the keyframes that exist within the range of keyframes stored in the existing MetadataDummy
 			
+		- Create a struct called BooleanFlags that holds information, like what "Import" checkboxes are enabled
+			- Only use them in KeyframeSetter and SceneObjectCreator so that it doesn't interfere with reading the file, only when applying things
+			
 		- Re-order all scripts so that they dont use structs/functions that aren't defined before a function call
 			- i.e. in HeaderParser, move GetHeaderData to the very bottom so all support functions are defined before they're called
 			- If it isn't set up like this, the script will always fail the first time it is run when 3ds max has started
+			
+	TESTING:
+		- Get a recording with a demolition and a scored goal, waiting for the next round to start before stopping the recording
 */
 
 
@@ -114,9 +122,10 @@ rollout Initialize "Import Animation File"
 	on ButtonConfirmImport pressed do
 	(
 		-- Configure unit and timeline settings
-		frameRate = 60
-		units.DisplayType = #metric
-		units.SystemType = #Centimeters
+		FrameRate = 60
+		TimeDisplayMode = #Frames
+		Units.DisplayType = #Metric
+		Units.SystemType = #Centimeters
 		
 		-- Create MetadataDummy to store scene information
 		local MetadataDummy = CreateMetadataDummy(HeaderData)
@@ -124,9 +133,26 @@ rollout Initialize "Import Animation File"
 		-- Create scene objects
 		local SceneObjects = CreateSceneObjects MetadataDummy TextboxCameraName.text
 		
+		-- Find the "BEGIN ANIMATION" header
+		while not eof ImportedFile do
+		(
+			local ThisLine = ReadLine ImportedFile
+			local bFoundHeader = MatchPattern ThisLine pattern:"*BEGIN ANIMATION*"
+			if bFoundHeader == true do exit
+		)
+		
 		-- Loop through all keyframes and apply them
 		local NumKeyframesFound = 0
-		while ApplyNextKeyframe ImportedFile SceneObjects &NumKeyframesFound do ()
+		local MaxAnimationRange = 0
+		while ApplyNextKeyframe ImportedFile SceneObjects &NumKeyframesFound &MaxAnimationRange do ()
+		
+		-- Set the animation range to the max keyframe
+		format "Keyframes Found: %\n" NumKeyframesFound
+		format "Animation Duration: %\n" MaxAnimationRange
+		local MaxAnimationRangeFrames = MaxAnimationRange * 60
+		AnimationRange = (interval 0 MaxAnimationRangeFrames)
+		
+		Close ImportedFile
 	)
 )
 

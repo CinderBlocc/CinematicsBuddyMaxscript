@@ -120,9 +120,9 @@ function GetWheelKeyframe ImportedFile =
 	local ThisLine = ReadLine ImportedFile
 	
 	-- Check if line is empty or is the closing line of the wheel array
-	local bIsClosingBracket = MatchPattern ThisLine pattern:"]"
-	if bIsClosingBracket == true return undefined
-	if ThisLine.count == 0 return undefined
+	local bIsClosingBracket = MatchPattern ThisLine pattern:"*]*"
+	if bIsClosingBracket == true do return undefined
+	if ThisLine.count == 0 do return undefined
 	
 	-- Get the wheel data
 	local SplitLine = GetSplitDataLine(ThisLine)
@@ -191,9 +191,9 @@ function GetCarKeyframe ImportedFile =
 			local SplitLine = GetSplitDataLine(ThisLine)
 			case SplitLine.LineLabel of
 			(
-				"L": CarKeyframe.BallLocation = GetLocation3D(SplitLine.LineValue)
-				"R": CarKeyframe.BallRotation = GetRotationFromQuat(SplitLine.LineValue)
-				"B": CarKeyframe.bIsBoosting  = GetBoostBool(SplitLine.LineValue)
+				"L": CarKeyframe.CarLocation = GetLocation3D(SplitLine.LineValue)
+				"R": CarKeyframe.CarRotation = GetRotationFromQuat(SplitLine.LineValue)
+				"B": CarKeyframe.bIsBoosting = GetBoostBool(SplitLine.LineValue)
 				"W": bIsGettingWheels = true
 				"}": exit
 			)
@@ -230,6 +230,7 @@ function GetKeyframe ImportedFile =
 	local bIsFileFinished = eof ImportedFile
 	if bIsFileFinished do
 	(
+		format "GetKeyframe returned undefined - File is finished\n"
 		return undefined
 	)
 	
@@ -238,6 +239,7 @@ function GetKeyframe ImportedFile =
 	local FirstLine = ReadLine ImportedFile
 	if FirstLine.count == 0 do
 	(
+		format "GetKeyframe returned undefined - First line is empty\n"
 		return undefined
 	)
 	
@@ -251,10 +253,10 @@ function GetKeyframe ImportedFile =
 		local SplitLine = GetSplitDataLine(ThisLine)
 		case SplitLine.LineLabel of
 		(
-			"T":  KeyframeData.TimeData   = GetTimeKeyframe(ImportedFile)
-			"CM": KeyframeData.CameraData = GetCameraKeyframe(ImportedFile)
-			"B":  KeyframeData.BallData   = GetBallKeyframe(ImportedFile)
-			"CR": KeyframeData.CarsData   = GetCarsKeyframes(ImportedFile)
+			"T":  KeyframeData.TimeKeyframe   = GetTimeKeyframe(ImportedFile)
+			"CM": KeyframeData.CameraKeyframe = GetCameraKeyframe(ImportedFile)
+			"B":  KeyframeData.BallKeyframe   = GetBallKeyframe(ImportedFile)
+			"CR": KeyframeData.CarKeyframes   = GetCarsKeyframes(ImportedFile)
 			"}":  exit
 		)
 	)

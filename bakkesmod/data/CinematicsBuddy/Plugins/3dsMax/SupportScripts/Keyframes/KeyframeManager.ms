@@ -5,7 +5,7 @@ FileIn(CBSupportScripts + "Keyframes\\KeyframeGetter.ms")
 FileIn(CBSupportScripts + "Keyframes\\KeyframeSetter.ms")
 
 -- MAIN FUNCTION DEFINITION --
-function ApplyNextKeyframe ImportedFile SceneObjects &NumKeyframesFound =
+function ApplyNextKeyframe ImportedFile SceneObjects &NumKeyframesFound &MaxAnimationRange =
 (
 	-- Get the keyframe
 	local KeyframeData = GetKeyframe(ImportedFile)
@@ -16,8 +16,14 @@ function ApplyNextKeyframe ImportedFile SceneObjects &NumKeyframesFound =
 	
 	-- Keyframe successfully found
 	NumKeyframesFound += 1
+	local bFirstKeyframe = false
+	if NumKeyframesFound == 1 do
+	(
+		bFirstKeyframe = true
+	)
 	
 	-- Apply the keyframe
-	ApplyKeyframe KeyframeData SceneObjects
+	ApplyKeyframe KeyframeData SceneObjects bFirstKeyframe
+	MaxAnimationRange = KeyframeData.TimeKeyframe.RealTime
 	return true
 )

@@ -136,7 +136,7 @@ function GetCarSeen ImportedFile =
 	
 	-- Get the CarsSeen index for this car. Return if it is past the last car in the list
 	local IndexLine = ReadLine ImportedFile
-	local bIsEndOfList = MatchPattern IndexLine pattern:"}"
+	local bIsEndOfList = MatchPattern IndexLine pattern:"*}*"
 	if bIsEndOfList then
 	(
 		return undefined

@@ -2,11 +2,12 @@
 
 function CreateMetadataDummy HeaderData =
 (
-	-- Delete any existing MetadataDummy objects
+	-- MetadataDummy already exists, so return it instead of making a new one
 	if $MetadataDummy != undefined do
 	(
-		format "Deleting old MetadataDummy\n"
-		delete $MetadataDummy
+		--format "Deleting old MetadataDummy\n"
+		--delete $MetadataDummy
+		return $MetadataDummy
 	)
 	
 	-- Create new dummy object

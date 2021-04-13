@@ -64,7 +64,7 @@ function CreateCarDummy MetadataDummy CarIndex CarMeshBase =
 		-- Animation data
 		parameters animationparams rollout:ro_animation
 		(
-			IsBoosting            type:#boolean ui:CheckboxIsBoosting
+			bIsBoosting           type:#boolean ui:CheckboxIsBoosting
 			Wheel0_SteerAmount    type:#float   ui:Spinner_W0_SteerAmount
 			Wheel0_SuspensionDist type:#float   ui:Spinner_W0_SuspensionDist
 			Wheel0_SpinSpeed      type:#float   ui:Spinner_W0_SpinSpeed

@@ -1,5 +1,10 @@
 -- SceneObjectCreator creates the objects necessary to rebuild the Rocket League scene inside 3ds Max.
 
+/*
+	TODO:
+		- Create the camera
+*/
+
 -- Import CarDummy script so its functions can be called
 FileIn(CBSupportScripts + "CarDummy.ms")
 	
@@ -16,6 +21,7 @@ struct StructSceneObjects
 -- FUNCTION DEFINITION --
 function CreateSceneObjects MetadataDummy CameraName = 
 (
+	DisableSceneRedraw
 	SceneObjects = StructSceneObjects()
 	
 	-- Store MetadataDummy in SceneObjects so it can be easily passed around in functions
@@ -65,5 +71,9 @@ function CreateSceneObjects MetadataDummy CameraName =
 	-- Delete original car mesh as all the dummies made their own clones
 	delete CarMeshBase
 	
+	-- Create camera
+	SceneObjects.CameraObject = FreeCamera name:CameraName
+	
+	EnableSceneRedraw
 	return SceneObjects
 )

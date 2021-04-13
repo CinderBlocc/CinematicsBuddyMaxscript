@@ -26,12 +26,12 @@ function GetSplitDataLine DataLine =
 -- 3D SPACE --
 function GetLocation3D VectorString =
 (
-	local OutputVector = Point3()
+	local OutputVector = Point3 0 0 0
 	
 	local SplitValues = FilterString VectorString ","
-	OutputVector.x = SplitValues[1]
-	OutputVector.y = SplitValues[2]
-	OutputVector.z = SplitValues[3]
+	OutputVector.x = SplitValues[1] as float
+	OutputVector.y = SplitValues[2] as float
+	OutputVector.z = SplitValues[3] as float
 	
 	return OutputVector
 )
@@ -44,14 +44,14 @@ global EQuatType_Car    = 2
 */
 function GetRotationFromQuat QuatString /*QuatType*/ = 
 (
-	local OutputEuler = EulerAngles()
-	local InputQuat = Quat()
+	local OutputEuler = EulerAngles 0 0 0
+	local InputQuat = Quat 0 0 0 1
 	
 	local SplitValues = FilterString QuatString ","
-	InputQuat.w = SplitValues[1]
-	InputQuat.x = SplitValues[2]
-	InputQuat.y = SplitValues[3]
-	InputQuat.z = SplitValues[4]
+	InputQuat.w = SplitValues[1] as float
+	InputQuat.x = SplitValues[2] as float
+	InputQuat.y = SplitValues[3] as float
+	InputQuat.z = SplitValues[4] as float
 	
 	/* FROM OLD CINEMATICSBUDDY SCRIPT FOR THE CAMERA
 	InputQuat.w = SplitValues[1]
