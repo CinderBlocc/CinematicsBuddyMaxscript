@@ -1,4 +1,4 @@
--- KeyframeParser reads through all of the keyframe data and applies that data to the CinematicsBuddy scene objects.
+-- KeyframeGetter reads data from ImportedFile to extract a keyframe.
 
 
 
@@ -30,10 +30,6 @@
 	-- i.e. Location and Rotation
 	
 	
--- Import UtilityFunctions script so its functions can be called
-FileIn(CBSupportScripts + "UtilityFunctions.ms")
-
-
 -- STRUCT DEFINITIONS --
 struct StructTimeKeyframe
 (
@@ -79,8 +75,7 @@ struct StructKeyframeData
 	CarKeyframes = #()
 )
 
-
--- DATA GETTER FUNCTION DEFINITIONS --
+-- SUPPORT FUNCTION DEFINITIONS --
 function GetTimeKeyframe ImportedFile = 
 (
 	local TimeKeyframe = StructTimeKeyframe()
@@ -119,22 +114,14 @@ function GetCarKeyframe ImportedFile =
 	return CarKeyframe
 )
 
-
--- DATA SETTER FUNCTION DEFINITION --
-function ApplyKeyframe KeyframeData SceneObjects = 
-(
-	
-)
-
-
 -- MAIN FUNCTION DEFINITION --
-function ApplyNextKeyframe ImportedFile SceneObjects &NumKeyframesFound =
+function GetKeyframe ImportedFile = 
 (
 	-- Check if the filestream is already finished
 	local bIsFileFinished = eof ImportedFile
 	if bIsFileFinished do
 	(
-		return false
+		return undefined
 	)
 	
 	-- Check if the first line of the keyframe is empty. If it is, that's the last line of the file
@@ -142,11 +129,10 @@ function ApplyNextKeyframe ImportedFile SceneObjects &NumKeyframesFound =
 	local FirstLine = ReadLine ImportedFile
 	if FirstLine.count == 0 do
 	(
-		return false
+		return undefined
 	)
 	
 	-- Both checks above passed. Extract data from keyframe
-	NumKeyframesFound += 1
 	local KeyframeData = StructKeyframeData()
 	while not eof ImportedFile do
 	(
@@ -164,7 +150,5 @@ function ApplyNextKeyframe ImportedFile SceneObjects &NumKeyframesFound =
 		)
 	)
 	
-	-- Apply the keyframe
-	ApplyKeyframe KeyframeData SceneObjects
-	return true
+	return KeyframeData
 )
