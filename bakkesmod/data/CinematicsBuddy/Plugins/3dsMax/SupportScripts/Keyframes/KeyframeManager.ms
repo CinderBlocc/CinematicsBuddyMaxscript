@@ -9,7 +9,12 @@ function ApplyNextKeyframe ImportedFile SceneObjects &NumKeyframesFound =
 (
 	-- Get the keyframe
 	local KeyframeData = GetKeyframe(ImportedFile)
-	if KeyframeData == undefined do return false
+	if KeyframeData == undefined do
+	(
+		return false
+	)
+	
+	-- Keyframe successfully found
 	NumKeyframesFound += 1
 	
 	-- Apply the keyframe

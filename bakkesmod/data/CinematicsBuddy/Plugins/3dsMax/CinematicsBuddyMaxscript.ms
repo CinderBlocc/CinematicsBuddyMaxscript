@@ -5,6 +5,11 @@
 
 /*
 	TODO:
+		- Parent the ball to a dummy and animate the dummy position?
+			- That way you could assign a constant corrective rotation to the ball without interfering with the animation
+		
+		- Do quaternions even need to be converted to EulerAngles? Are they fine to assign directly as a Quat?
+		
 		- Make a macro script with an included icon that people can add to a toolbar?
 			- The macro would merely call the script itself
 			- If they made the script itself a button, would script updates apply to the script that button calls?

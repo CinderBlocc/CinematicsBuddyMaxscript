@@ -23,4 +23,51 @@ function GetSplitDataLine DataLine =
 	return SplitDataLine
 )
 
--- QUATERNIONS --
+-- 3D SPACE --
+function GetLocation3D VectorString =
+(
+	local OutputVector = Point3()
+	
+	local SplitValues = FilterString VectorString ","
+	OutputVector.x = SplitValues[1]
+	OutputVector.y = SplitValues[2]
+	OutputVector.z = SplitValues[3]
+	
+	return OutputVector
+)
+
+/*
+-- Pseudo enum in case each rotation needs to be converted differently for some dumb reason
+global EQuatType_Camera = 0
+global EQuatType_Ball   = 1
+global EQuatType_Car    = 2
+*/
+function GetRotationFromQuat QuatString /*QuatType*/ = 
+(
+	local OutputEuler = EulerAngles()
+	local InputQuat = Quat()
+	
+	local SplitValues = FilterString QuatString ","
+	InputQuat.w = SplitValues[1]
+	InputQuat.x = SplitValues[2]
+	InputQuat.y = SplitValues[3]
+	InputQuat.z = SplitValues[4]
+	
+	/* FROM OLD CINEMATICSBUDDY SCRIPT FOR THE CAMERA
+	InputQuat.w = SplitValues[1]
+	InputQuat.x = -SplitValues[3]
+	InputQuat.y = -SplitValues[2]
+	InputQuat.z = -SplitValues[4]
+	*/
+	
+	/* FROM OLD CINEMATICSBUDDY SCRIPT FOR THE BALL AND CARS
+	InputQuat.w = SplitValues[1]
+	InputQuat.x = -SplitValues[2]
+	InputQuat.y = SplitValues[3]
+	InputQuat.z = -SplitValues[4]
+	-- then rotated by " ball.transform *= rotateZmatrix 30"
+	*/
+	
+	OutputEuler = InputQuat as eulerangles
+	return OutputEuler
+)
