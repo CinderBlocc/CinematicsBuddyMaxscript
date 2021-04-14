@@ -108,8 +108,22 @@ function GetReplayMetadata ImportedFile =
 (
 	local ReplayMetadata = StructReplayMetadata()
 	
-	-- Skip "REPLAY METADATA" header
-	ReadLine ImportedFile
+	-- Skip "REPLAY METADATA" header, or return empty data if that header doesn't exist
+	local StartingLocation = FilePos ImportedFile
+	local HeaderLine = ReadLine ImportedFile
+	local bHasReplayMetadata = MatchPattern HeaderLine pattern:"*REPLAY METADATA*"
+	if bHasReplayMetadata == false do
+	(
+		Seek ImportedFile StartingLocation
+		
+		ReplayMetadata.ReplayName = "NULL"
+		ReplayMetadata.ID         = "NULL"
+		ReplayMetadata.Date       = "NULL"
+		ReplayMetadata.FPS        = 0
+		ReplayMetadata.Frames     = 0
+		
+		return ReplayMetadata
+	)
 	
 	while not eof ImportedFile do
 	(
@@ -173,7 +187,14 @@ function GetCarsSeen ImportedFile =
 	local CarsSeen = #()
 	
 	-- Skip "CARS SEEN" header and opening brace
-	ReadLine ImportedFile
+	local StartingLocation = FilePos ImportedFile
+	local HeaderLine = ReadLine ImportedFile
+	local bHasCarsSeen = MatchPattern HeaderLine pattern:"*CARS SEEN*"
+	if bHasCarsSeen == false do
+	(
+		Seek ImportedFile StartingLocation
+		return CarsSeen
+	)
 	ReadLine ImportedFile
 	
 	while true do
