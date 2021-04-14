@@ -33,8 +33,8 @@ function ApplyCameraAnimation KeyframeTime KeyframeData CameraObject =
 	-- Set the animation values
 	at time KeyframeTime
 	(
-		CameraObject.pos      = KeyframeData.CameraKeyframe.CameraLocation
 		CameraObject.rotation = KeyframeData.CameraKeyframe.CameraRotation
+		CameraObject.pos      = KeyframeData.CameraKeyframe.CameraLocation
 		CameraObject.fov      = KeyframeData.CameraKeyframe.CameraFieldOfView
 	)
 )
@@ -44,8 +44,8 @@ function ApplyBallAnimation KeyframeTime KeyframeData BallMesh =
 	-- Set the animation values
 	at time KeyframeTime
 	(
-		BallMesh.pos      = KeyframeData.BallKeyframe.BallLocation
 		BallMesh.rotation = KeyframeData.BallKeyframe.BallRotation
+		BallMesh.pos      = KeyframeData.BallKeyframe.BallLocation
 	)
 )
 
@@ -76,8 +76,8 @@ function ApplyCarAnimation KeyframeTime KeyframeData CarDummy =
 			-- FREEZE AT ORIGIN --
 			
 			-- Physical attributes
-			CarDummy.pos      = Point3 0 0 0
 			CarDummy.rotation = Quat 0 0 0 0
+			CarDummy.pos      = Point3 0 0 0
 			
 			-- Modifier attributes (Maxscript starts arrays at 1)
 			TheModifier.bIsBoosting = false
@@ -99,8 +99,8 @@ function ApplyCarAnimation KeyframeTime KeyframeData CarDummy =
 			-- APPLY THE REAL ANIMATION --
 			
 			-- Physical attributes
-			CarDummy.pos      = TheCarKeyframe.CarLocation
 			CarDummy.rotation = TheCarKeyframe.CarRotation
+			CarDummy.pos      = TheCarKeyframe.CarLocation
 			
 			-- Modifier attributes (Maxscript starts arrays at 1)
 			TheModifier.bIsBoosting = TheCarKeyframe.bIsBoosting

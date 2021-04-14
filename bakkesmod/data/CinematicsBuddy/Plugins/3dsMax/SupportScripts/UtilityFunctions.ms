@@ -36,35 +36,44 @@ function GetLocation3D VectorString =
 	return OutputVector
 )
 
-/*
 -- Pseudo enum in case each rotation needs to be converted differently for some dumb reason
 global EQuatType_Camera = 0
 global EQuatType_Ball   = 1
 global EQuatType_Car    = 2
-*/
-function GetRotationFromQuat QuatString /*QuatType*/ = 
+function GetRotationFromQuat QuatString QuatType = 
 (
 	local OutputEuler = EulerAngles 0 0 0
 	local InputQuat = Quat 0 0 0 1
 	
 	local SplitValues = FilterString QuatString ","
-	InputQuat.w = SplitValues[1] as float
-	InputQuat.x = SplitValues[2] as float
-	InputQuat.y = SplitValues[3] as float
-	InputQuat.z = SplitValues[4] as float
+	
+	if QuatType == EQuatType_Camera then
+	(
+		InputQuat.w =  SplitValues[1] as float
+		InputQuat.x = -SplitValues[3] as float
+		InputQuat.y = -SplitValues[2] as float
+		InputQuat.z = -SplitValues[4] as float
+	)
+	else
+	(
+		InputQuat.w = SplitValues[1] as float
+		InputQuat.x = SplitValues[2] as float
+		InputQuat.y = SplitValues[3] as float
+		InputQuat.z = SplitValues[4] as float
+	)
 	
 	/* FROM OLD CINEMATICSBUDDY SCRIPT FOR THE CAMERA
-	InputQuat.w = SplitValues[1]
-	InputQuat.x = -SplitValues[3]
-	InputQuat.y = -SplitValues[2]
-	InputQuat.z = -SplitValues[4]
+	InputQuat.w =  SplitValues[1] as float
+	InputQuat.x = -SplitValues[3] as float
+	InputQuat.y = -SplitValues[2] as float
+	InputQuat.z = -SplitValues[4] as float
 	*/
 	
 	/* FROM OLD CINEMATICSBUDDY SCRIPT FOR THE BALL AND CARS
-	InputQuat.w = SplitValues[1]
-	InputQuat.x = -SplitValues[2]
-	InputQuat.y = SplitValues[3]
-	InputQuat.z = -SplitValues[4]
+	InputQuat.w =  SplitValues[1] as float
+	InputQuat.x = -SplitValues[2] as float
+	InputQuat.y =  SplitValues[3] as float
+	InputQuat.z = -SplitValues[4] as float
 	-- then rotated by " ball.transform *= rotateZmatrix 30"
 	*/
 	

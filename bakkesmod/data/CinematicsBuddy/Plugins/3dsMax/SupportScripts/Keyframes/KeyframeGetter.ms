@@ -83,7 +83,7 @@ function GetCameraKeyframe ImportedFile =
 		case SplitLine.LineLabel of
 		(
 			"L": CameraKeyframe.CameraLocation    = GetLocation3D(SplitLine.LineValue)
-			"R": CameraKeyframe.CameraRotation    = GetRotationFromQuat(SplitLine.LineValue)
+			"R": CameraKeyframe.CameraRotation    = GetRotationFromQuat SplitLine.LineValue EQuatType_Camera
 			"F": CameraKeyframe.CameraFieldOfView = SplitLine.LineValue as float
 			"}": exit
 		)
@@ -105,7 +105,7 @@ function GetBallKeyframe ImportedFile =
 		case SplitLine.LineLabel of
 		(
 			"L": BallKeyframe.BallLocation = GetLocation3D(SplitLine.LineValue)
-			"R": BallKeyframe.BallRotation = GetRotationFromQuat(SplitLine.LineValue)
+			"R": BallKeyframe.BallRotation = GetRotationFromQuat SplitLine.LineValue EQuatType_Ball
 			"}": exit
 		)
 	)
@@ -192,7 +192,7 @@ function GetCarKeyframe ImportedFile =
 			case SplitLine.LineLabel of
 			(
 				"L": CarKeyframe.CarLocation = GetLocation3D(SplitLine.LineValue)
-				"R": CarKeyframe.CarRotation = GetRotationFromQuat(SplitLine.LineValue)
+				"R": CarKeyframe.CarRotation = GetRotationFromQuat SplitLine.LineValue EQuatType_Car
 				"B": CarKeyframe.bIsBoosting = GetBoostBool(SplitLine.LineValue)
 				"W": bIsGettingWheels = true
 				"}": exit
