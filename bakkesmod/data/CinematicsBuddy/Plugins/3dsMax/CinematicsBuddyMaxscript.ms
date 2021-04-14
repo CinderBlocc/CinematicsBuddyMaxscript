@@ -4,14 +4,7 @@
 	-- Exports rebuilt scene to an animated FBX file to be transferred to other 3D software
 
 /*
-	TODO:
-		- Why is the first frame wack for all the cars?
-		
-		- Parent the ball to a dummy and animate the dummy position?
-			- That way you could assign a constant corrective rotation to the ball without interfering with the animation
-		
-		- Do quaternions even need to be converted to EulerAngles? Are they fine to assign directly as a Quat?
-		
+	TODO:		
 		- Make a macro script with an included icon that people can add to a toolbar?
 			- The macro would merely call the script itself
 			- If they made the script itself a button, would script updates apply to the script that button calls?
@@ -26,9 +19,6 @@
 		- Re-order all scripts so that they dont use structs/functions that aren't defined before a function call
 			- i.e. in HeaderParser, move GetHeaderData to the very bottom so all support functions are defined before they're called
 			- If it isn't set up like this, the script will always fail the first time it is run when 3ds max has started
-			
-	TESTING:
-		- Get a recording with a demolition and a scored goal, waiting for the next round to start before stopping the recording
 */
 
 
@@ -127,12 +117,6 @@ rollout Initialize "Import Animation File"
 		Units.DisplayType = #Metric
 		Units.SystemType = #Centimeters
 		
-		-- Create MetadataDummy to store scene information
-		local MetadataDummy = CreateMetadataDummy(HeaderData)
-		
-		-- Create scene objects
-		local SceneObjects = CreateSceneObjects MetadataDummy TextboxCameraName.text
-		
 		-- Find the "BEGIN ANIMATION" header
 		while not eof ImportedFile do
 		(
@@ -141,16 +125,40 @@ rollout Initialize "Import Animation File"
 			if bFoundHeader == true do exit
 		)
 		
-		-- Loop through all keyframes and apply them
-		local NumKeyframesFound = 0
-		local MaxAnimationRange = 0
-		while ApplyNextKeyframe ImportedFile SceneObjects &NumKeyframesFound &MaxAnimationRange do ()
-		
-		-- Set the animation range to the max keyframe
-		format "Keyframes Found: %\n" NumKeyframesFound
-		format "Animation Duration: %\n" MaxAnimationRange
-		local MaxAnimationRangeFrames = MaxAnimationRange * 60
-		AnimationRange = (interval 0 MaxAnimationRangeFrames)
+		-- Apply animations
+		if $MetadataDummy == undefined then
+		(
+			-- MetadataDummy does not exist yet, so this is the first import for this scene. Import all checked objects --
+			
+			-- Create MetadataDummy to store scene information
+			local MetadataDummy = CreateMetadataDummy(HeaderData)
+			
+			-- Create scene objects
+			local SceneObjects = CreateSceneObjects MetadataDummy TextboxCameraName.text
+			
+			-- Loop through all keyframes and apply them
+			local NumKeyframesFound = 0
+			local MaxAnimationRange = 0
+			while ApplyNextKeyframe ImportedFile SceneObjects &NumKeyframesFound &MaxAnimationRange do ()
+			
+			-- Set the animation range to the max keyframe
+			format "Keyframes Found: %\n" NumKeyframesFound
+			format "Animation Duration: %\n" MaxAnimationRange
+			local MaxAnimationRangeFrames = MaxAnimationRange * 60
+			AnimationRange = (interval 0 MaxAnimationRangeFrames)
+		)
+		else
+		(
+			-- MetadataDummy already exists, so this is not the first import for this scene. Import only the camera if it is checked --
+			
+			-- Create only the new camera, but pass in MetadataDummy as part of the struct
+			local SceneObjects = StructNewCamera()
+			SceneObjects.MetadataDummy = $MetadataDummy
+			SceneObjects.CameraObject = FreeCamera name:TextboxCameraName.text
+			
+			-- Loop through all keyframes and apply only the camera information
+			while ApplyNextCameraKeyframe ImportedFile SceneObjects do ()
+		)
 		
 		Close ImportedFile
 	)

@@ -27,3 +27,25 @@ function ApplyNextKeyframe ImportedFile SceneObjects &NumKeyframesFound &MaxAnim
 	MaxAnimationRange = KeyframeData.TimeKeyframe.RealTime
 	return true
 )
+
+-- CAMERA ONLY FUNCTION DEFINITION --
+function ApplyNextCameraKeyframe ImportedFile SceneObjects = 
+(
+	
+	
+	
+									-- NEED TO ONLY START APPLYING ANIMATION ONCE THE EARLIEST "ReplayFrame" FROM NEW CAMERA MATCHES THE EARLIEST FROM MetadataDummy --
+	
+	
+	
+	-- Get the keyframe
+	local KeyframeData = GetKeyframe(ImportedFile)
+	if KeyframeData == undefined do
+	(
+		return false
+	)
+	
+	-- Apply the keyframe
+	ApplyCameraOnlyKeyframe KeyframeData SceneObjects
+	return true
+)

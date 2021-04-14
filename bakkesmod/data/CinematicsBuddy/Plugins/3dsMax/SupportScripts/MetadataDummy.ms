@@ -1,15 +1,7 @@
 -- MetadataDummy stores all information necessary for CinematicsBuddy to function.
 
 function CreateMetadataDummy HeaderData =
-(
-	-- MetadataDummy already exists, so return it instead of making a new one
-	if $MetadataDummy != undefined do
-	(
-		--format "Deleting old MetadataDummy\n"
-		--delete $MetadataDummy
-		return $MetadataDummy
-	)
-	
+(	
 	-- Create new dummy object
 	MetadataDummy = Dummy name:"MetadataDummy" pos:[0,0,0]
 	

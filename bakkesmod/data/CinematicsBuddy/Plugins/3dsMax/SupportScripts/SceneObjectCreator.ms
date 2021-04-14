@@ -17,6 +17,12 @@ struct StructSceneObjects
 	CameraObject,
 	CarDummies = #()
 )
+
+struct StructNewCamera
+(
+	MetadataDummy,
+	CameraObject
+)
 	
 -- FUNCTION DEFINITION --
 function CreateSceneObjects MetadataDummy CameraName = 
