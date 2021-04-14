@@ -83,7 +83,8 @@ function ApplyCarAnimation KeyframeTime KeyframeData CarDummy =
 			CarDummy.pos      = Point3 0 0 0
 			
 			-- Modifier attributes (Maxscript starts arrays at 1)
-			TheModifier.bIsBoosting = false
+			TheModifier.bIsDemolished = true
+			TheModifier.bIsBoosting   = false
 			TheModifier.Wheel0_SteerAmount    = 0
 			TheModifier.Wheel0_SuspensionDist = 0
 			TheModifier.Wheel0_SpinSpeed      = 0
@@ -106,7 +107,8 @@ function ApplyCarAnimation KeyframeTime KeyframeData CarDummy =
 			CarDummy.pos      = TheCarKeyframe.CarLocation
 			
 			-- Modifier attributes (Maxscript starts arrays at 1)
-			TheModifier.bIsBoosting = TheCarKeyframe.bIsBoosting
+			TheModifier.bIsDemolished = false
+			TheModifier.bIsBoosting   = TheCarKeyframe.bIsBoosting
 			TheModifier.Wheel0_SteerAmount    = TheCarKeyframe.WheelKeyframes[1].SteerAmount
 			TheModifier.Wheel0_SuspensionDist = TheCarKeyframe.WheelKeyframes[1].SuspensionDistance
 			TheModifier.Wheel0_SpinSpeed      = TheCarKeyframe.WheelKeyframes[1].SpinSpeed

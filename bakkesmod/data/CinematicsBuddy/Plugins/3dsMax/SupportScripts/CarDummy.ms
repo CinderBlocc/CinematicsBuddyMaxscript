@@ -29,7 +29,7 @@ function GetCarInfo MetadataDummy CarIndex =
 
 -- MAIN FUNCTION DEFINITION --
 function CreateCarDummy MetadataDummy CarIndex CarMeshBase =
-(	
+(
 	-- Get information about this car from MetadataDummy
 	local CarInfo = GetCarInfo MetadataDummy CarIndex
 	
@@ -64,6 +64,7 @@ function CreateCarDummy MetadataDummy CarIndex CarMeshBase =
 		-- Animation data
 		parameters animationparams rollout:ro_animation
 		(
+			bIsDemolished         type:#boolean ui:CheckboxIsDemolished
 			bIsBoosting           type:#boolean ui:CheckboxIsBoosting
 			Wheel0_SteerAmount    type:#float   ui:Spinner_W0_SteerAmount
 			Wheel0_SuspensionDist type:#float   ui:Spinner_W0_SuspensionDist
@@ -80,7 +81,8 @@ function CreateCarDummy MetadataDummy CarIndex CarMeshBase =
 		)
 		rollout ro_animation "Animation Data"
 		(
-			checkbox CheckboxIsBoosting "Boosting" align:#center enabled:false
+			checkbox CheckboxIsDemolished "Demolished" pos:[8,5] enabled:false
+			checkbox CheckboxIsBoosting   "Boosting"   pos:[93,5] enabled:false
 			label Label_W0 "------------- WHEEL 0 ------------- " align:#center
 			spinner Spinner_W0_SteerAmount    "Steer Amount          "    pos:[19,45]  range:[-1000,1000,0] width:139 enabled:false
 			spinner Spinner_W0_SuspensionDist "Suspension Distance"       pos:[23,65]  range:[-1000,1000,0] width:135 enabled:false
