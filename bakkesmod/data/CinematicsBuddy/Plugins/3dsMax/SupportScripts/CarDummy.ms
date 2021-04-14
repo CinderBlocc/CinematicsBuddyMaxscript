@@ -35,7 +35,7 @@ function CreateCarDummy MetadataDummy CarIndex CarMeshBase =
 	
 	-- Create DummyObject
 	local DummyObjectName = CarInfo.CarName + " DUMMY"
-	local DummyObject = PointHelperObj name:DummyObjectName cross: true box: false size: 100 wirecolor:[14,255,2]
+	local DummyObject = PointHelperObj name:DummyObjectName cross:true box:false size:100 wirecolor:[14,255,2]
 	
 	-- Add custom attributes
 	AddModifier DummyObject (EmptyModifier())
@@ -82,21 +82,21 @@ function CreateCarDummy MetadataDummy CarIndex CarMeshBase =
 		(
 			checkbox CheckboxIsBoosting "Boosting" align:#center enabled:false
 			label Label_W0 "------------- WHEEL 0 ------------- " align:#center
-			spinner Spinner_W0_SteerAmount    "Steer Amount          "    pos:[19,45]  width:139 enabled:false
-			spinner Spinner_W0_SuspensionDist "Suspension Distance"       pos:[23,65]  width:135 enabled:false
-			spinner Spinner_W0_SpinSpeed      "Spin Speed               " pos:[21,85]  width:137 enabled:false
+			spinner Spinner_W0_SteerAmount    "Steer Amount          "    pos:[19,45]  range:[-1000,1000,0] width:139 enabled:false
+			spinner Spinner_W0_SuspensionDist "Suspension Distance"       pos:[23,65]  range:[-1000,1000,0] width:135 enabled:false
+			spinner Spinner_W0_SpinSpeed      "Spin Speed               " pos:[21,85]  range:[-1000,1000,0] width:137 enabled:false
 			label Label_W1 "------------- WHEEL 1 ------------- " align:#center
-			spinner Spinner_W1_SteerAmount    "Steer Amount          "    pos:[19,122] width:139 enabled:false
-			spinner Spinner_W1_SuspensionDist "Suspension Distance"       pos:[23,142] width:135 enabled:false
-			spinner Spinner_W1_SpinSpeed      "Spin Speed               " pos:[21,162] width:137 enabled:false
+			spinner Spinner_W1_SteerAmount    "Steer Amount          "    pos:[19,122] range:[-1000,1000,0] width:139 enabled:false
+			spinner Spinner_W1_SuspensionDist "Suspension Distance"       pos:[23,142] range:[-1000,1000,0] width:135 enabled:false
+			spinner Spinner_W1_SpinSpeed      "Spin Speed               " pos:[21,162] range:[-1000,1000,0] width:137 enabled:false
 			label Label_W2 "------------- WHEEL 2 ------------- " align:#center
-			spinner Spinner_W2_SteerAmount    "Steer Amount          "    pos:[19,200] width:139 enabled:false
-			spinner Spinner_W2_SuspensionDist "Suspension Distance"       pos:[23,220] width:135 enabled:false
-			spinner Spinner_W2_SpinSpeed      "Spin Speed               " pos:[21,240] width:137 enabled:false
+			spinner Spinner_W2_SteerAmount    "Steer Amount          "    pos:[19,200] range:[-1000,1000,0] width:139 enabled:false
+			spinner Spinner_W2_SuspensionDist "Suspension Distance"       pos:[23,220] range:[-1000,1000,0] width:135 enabled:false
+			spinner Spinner_W2_SpinSpeed      "Spin Speed               " pos:[21,240] range:[-1000,1000,0] width:137 enabled:false
 			label Label_W3 "------------- WHEEL 3 ------------- " align:#center
-			spinner Spinner_W3_SteerAmount    "Steer Amount          "    pos:[19,278] width:139 enabled:false
-			spinner Spinner_W3_SuspensionDist "Suspension Distance"       pos:[23,298] width:135 enabled:false
-			spinner Spinner_W3_SpinSpeed      "Spin Speed               " pos:[21,318] width:137 enabled:false
+			spinner Spinner_W3_SteerAmount    "Steer Amount          "    pos:[19,278] range:[-1000,1000,0] width:139 enabled:false
+			spinner Spinner_W3_SuspensionDist "Suspension Distance"       pos:[23,298] range:[-1000,1000,0] width:135 enabled:false
+			spinner Spinner_W3_SpinSpeed      "Spin Speed               " pos:[21,318] range:[-1000,1000,0] width:137 enabled:false
 		)
 	)
 	CustAttributes.Add TheModifier CarDataModifier

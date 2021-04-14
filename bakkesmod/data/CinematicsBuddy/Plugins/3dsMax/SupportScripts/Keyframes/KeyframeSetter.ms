@@ -36,16 +36,19 @@ function ApplyCameraAnimation KeyframeTime KeyframeData CameraObject =
 		CameraObject.rotation = KeyframeData.CameraKeyframe.CameraRotation
 		CameraObject.pos      = KeyframeData.CameraKeyframe.CameraLocation
 		CameraObject.fov      = KeyframeData.CameraKeyframe.CameraFieldOfView
+		
+		CameraObject.rotation.z_rotation.controller.value -= 90
+		CameraObject.rotation.x_rotation.controller.value += 90
 	)
 )
 
-function ApplyBallAnimation KeyframeTime KeyframeData BallMesh = 
+function ApplyBallAnimation KeyframeTime KeyframeData BallDummy = 
 (
 	-- Set the animation values
 	at time KeyframeTime
 	(
-		BallMesh.rotation = KeyframeData.BallKeyframe.BallRotation
-		BallMesh.pos      = KeyframeData.BallKeyframe.BallLocation
+		BallDummy.rotation = KeyframeData.BallKeyframe.BallRotation
+		BallDummy.pos      = KeyframeData.BallKeyframe.BallLocation
 	)
 )
 
@@ -137,7 +140,7 @@ function ApplyKeyframe KeyframeData SceneObjects bFirstKeyframe =
 	set animate on
 	ApplyMetadataDummyAnimation KeyframeTime KeyframeData SceneObjects.MetadataDummy bFirstKeyframe
 	ApplyCameraAnimation        KeyframeTime KeyframeData SceneObjects.CameraObject
-	ApplyBallAnimation          KeyframeTime KeyframeData SceneObjects.BallMesh
+	ApplyBallAnimation          KeyframeTime KeyframeData SceneObjects.BallDummy
 	ApplyCarAnimations          KeyframeTime KeyframeData SceneObjects.CarDummies
 	set animate off
 )

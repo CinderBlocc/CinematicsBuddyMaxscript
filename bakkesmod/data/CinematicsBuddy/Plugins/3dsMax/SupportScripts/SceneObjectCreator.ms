@@ -13,7 +13,7 @@ struct StructSceneObjects
 (
 	MetadataDummy,
 	ArenaMesh,
-	BallMesh,
+	BallDummy,
 	CameraObject,
 	CarDummies = #()
 )
@@ -37,12 +37,18 @@ function CreateSceneObjects MetadataDummy CameraName =
 	-- Import ball mesh
 	local BallLocation = CBModelAssets + "BallProxy.FBX"
 	ImportFile BallLocation #noPrompt
-	SceneObjects.BallMesh = $RL_BALL_PROXY
-	SceneObjects.BallMesh.scale = [1,1,1]
+	local BallMesh = $RL_BALL_PROXY
+	BallMesh.scale = [1,1,1]
+	BallMesh.rotation = EulerAngles 0 0 -30
+	
+	-- Create dummy for ball so ballmesh can have rotation offset
+	local BallDummy = PointHelperObj name:"RL_BALL_PROXY DUMMY" cross:true box:false size:250 wirecolor:[14,255,2]
+	BallMesh.parent = BallDummy
+	SceneObjects.BallDummy = BallDummy
 	
 	-- Assign ball and arena names to MetadataDummy
 	MetadataModifier.OtherArenaName = SceneObjects.ArenaMesh.name
-	MetadataModifier.OtherBallName  = SceneObjects.BallMesh.name
+	MetadataModifier.OtherBallName  = SceneObjects.BallDummy.name
 	
 	-- Import car mesh to assign to car dummies
 	local CarLocation = CBModelAssets + "OctaneProxy.FBX"
@@ -56,14 +62,7 @@ function CreateSceneObjects MetadataDummy CameraName =
 	local CarIndex = 1
 	while CarIndex <= CarNamesArray.count do
 	(
-		local NewCarDummy = CreateCarDummy MetadataDummy CarIndex CarMeshBase
-		
-		
-		
-		NewCarDummy.pos = [0, 150 * CarIndex, 17] -- REMOVE WHEN DONE
-		
-		
-		
+		local NewCarDummy = CreateCarDummy MetadataDummy CarIndex CarMeshBase		
 		append SceneObjects.CarDummies NewCarDummy
 		CarIndex += 1
 	)

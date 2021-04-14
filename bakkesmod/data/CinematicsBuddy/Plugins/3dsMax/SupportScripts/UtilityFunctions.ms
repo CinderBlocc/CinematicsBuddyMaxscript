@@ -33,6 +33,8 @@ function GetLocation3D VectorString =
 	OutputVector.y = SplitValues[2] as float
 	OutputVector.z = SplitValues[3] as float
 	
+	OutputVector.y *= -1
+	
 	return OutputVector
 )
 
@@ -56,10 +58,10 @@ function GetRotationFromQuat QuatString QuatType =
 	)
 	else
 	(
-		InputQuat.w = SplitValues[1] as float
-		InputQuat.x = SplitValues[2] as float
-		InputQuat.y = SplitValues[3] as float
-		InputQuat.z = SplitValues[4] as float
+		InputQuat.w =  SplitValues[1] as float
+		InputQuat.x = -SplitValues[2] as float
+		InputQuat.y =  SplitValues[3] as float
+		InputQuat.z = -SplitValues[4] as float
 	)
 	
 	/* FROM OLD CINEMATICSBUDDY SCRIPT FOR THE CAMERA
