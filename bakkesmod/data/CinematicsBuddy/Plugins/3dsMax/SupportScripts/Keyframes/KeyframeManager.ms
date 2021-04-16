@@ -5,7 +5,7 @@ FileIn(CBSupportScripts + "Keyframes\\KeyframeGetter.ms")
 FileIn(CBSupportScripts + "Keyframes\\KeyframeSetter.ms")
 
 -- MAIN FUNCTION DEFINITION --
-function ApplyNextKeyframe ImportedFile SceneObjects &NumKeyframesFound &MaxAnimationRange =
+function ApplyNextKeyframe ImportedFile SceneObjects ImportTypes &NumKeyframesFound &MaxAnimationRange =
 (
 	-- Get the keyframe
 	local KeyframeData = GetKeyframe(ImportedFile)
@@ -23,20 +23,20 @@ function ApplyNextKeyframe ImportedFile SceneObjects &NumKeyframesFound &MaxAnim
 	)
 	
 	-- Apply the keyframe
-	ApplyKeyframe KeyframeData SceneObjects bFirstKeyframe
+	ApplyKeyframe KeyframeData SceneObjects ImportTypes bFirstKeyframe
 	MaxAnimationRange = KeyframeData.TimeKeyframe.RealTime
 	return true
 )
 
 -- CAMERA ONLY FUNCTION DEFINITION --
-function ApplyNextCameraKeyframe ImportedFile SceneObjects = 
+function ApplyNextCameraKeyframe ImportedFile SceneObjects &FirstValidKeyframe &AnimationStartTime = 
 (
+	-- Pass in an empty keyframe for "FirstValidKeyframe"
+		-- When the first keyframe within the ReplayFrame range is found, set that as FirstValidKeyframe
+		-- If FVK is null, skip the "ApplyCameraOnlyKeyframe" call
 	
-	
-	
-									-- NEED TO ONLY START APPLYING ANIMATION ONCE THE EARLIEST "ReplayFrame" FROM NEW CAMERA MATCHES THE EARLIEST FROM MetadataDummy --
-	
-	
+	-- FirstValidKeyframe: The first keyframe imported from the file that sits within the range of MetadataDummy's replay frames
+	-- AnimationStartTime: The time on the timeline that this first frame was found
 	
 	-- Get the keyframe
 	local KeyframeData = GetKeyframe(ImportedFile)
@@ -45,7 +45,25 @@ function ApplyNextCameraKeyframe ImportedFile SceneObjects =
 		return false
 	)
 	
-	-- Apply the keyframe
-	ApplyCameraOnlyKeyframe KeyframeData SceneObjects
+	-- Find the first valid keyframe, and the time that it was valid
+	if FirstValidKeyframe == undefined do
+	(
+		if IsValidKeyframe KeyframeData SceneObjects.MetadataDummy do
+		(
+			FirstValidKeyframe = KeyframeData
+			AnimationStartTime = 0 					-- TODO: Actually find the first timeline time that the ReplayFrame range syncs with new camera
+		)
+	)
+	
+	-- Apply the keyframe as a time difference from the first valid keyframe
+	if FirstValidKeyframe != undefined do
+	(
+		-- Check if this keyframe's animation has gone past the end of the animation range stored in MetadataDummy
+		if IsValidKeyframe KeyframeData SceneObjects.MetadataDummy do
+		(
+			ApplyCameraOnlyKeyframe KeyframeData SceneObjects FirstValidKeyframe AnimationStartTime
+		)
+	)
+		
 	return true
 )

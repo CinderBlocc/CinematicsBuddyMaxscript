@@ -133,16 +133,38 @@ function ApplyCarAnimations KeyframeTime KeyframeData CarDummies =
 	)
 )
 
--- MAIN FUNCTION DEFINITION --
-function ApplyKeyframe KeyframeData SceneObjects bFirstKeyframe = 
+-- MAIN FUNCTION DEFINITIONS --
+function ApplyKeyframe KeyframeData SceneObjects ImportTypes bFirstKeyframe = 
 (
 	-- Get keyframe time as a factor of frames at 60 fps
 	local KeyframeTime = KeyframeData.TimeKeyframe.RealTime * 60
 	
 	set animate on
 	ApplyMetadataDummyAnimation KeyframeTime KeyframeData SceneObjects.MetadataDummy bFirstKeyframe
-	ApplyCameraAnimation        KeyframeTime KeyframeData SceneObjects.CameraObject
-	ApplyBallAnimation          KeyframeTime KeyframeData SceneObjects.BallDummy
-	ApplyCarAnimations          KeyframeTime KeyframeData SceneObjects.CarDummies
+	
+	if ImportTypes.bImportCamera == true do
+	(
+		ApplyCameraAnimation KeyframeTime KeyframeData SceneObjects.CameraObject
+	)
+	
+	if ImportTypes.bImportBall == true do
+	(
+		ApplyBallAnimation KeyframeTime KeyframeData SceneObjects.BallDummy
+	)
+	
+	if ImportTypes.bImportCars == true do
+	(
+		ApplyCarAnimations KeyframeTime KeyframeData SceneObjects.CarDummies
+	)
+	set animate off
+)
+
+function ApplyCameraOnlyKeyframe KeyframeData SceneObjects = 
+(
+	-- Get keyframe time as a factor of frames at 60 fps
+	local KeyframeTime = KeyframeData.TimeKeyframe.RealTime * 60
+	
+	set animate on
+	
 	set animate off
 )

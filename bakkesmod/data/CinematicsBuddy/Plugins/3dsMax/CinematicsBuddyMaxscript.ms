@@ -4,21 +4,25 @@
 	-- Exports rebuilt scene to an animated FBX file to be transferred to other 3D software
 
 /*
-	TODO:		
-		- Make a macro script with an included icon that people can add to a toolbar?
-			- The macro would merely call the script itself
-			- If they made the script itself a button, would script updates apply to the script that button calls?
-				- If the script gets baked into the button, then the macro to call the real script is what should get baked in
-		
+	TODO:
 		- Once MetadataDummy exists, don't allow importing of Ball and Cars, only new Cameras
+			- Create a struct called BooleanFlags that holds information, like what "Import" checkboxes are enabled
+			- Only use them in KeyframeSetter and SceneObjectCreator so that it doesn't interfere with reading the file, only when applying things
+			- At the end of "ButtonConfirmImport pressed", uncheck and disable the Ball and Car checkboxes
+		
+		- Importing additional cameras
 			- When adding a new camera, only add the keyframes that exist within the range of keyframes stored in the existing MetadataDummy
 			
-		- Create a struct called BooleanFlags that holds information, like what "Import" checkboxes are enabled
-			- Only use them in KeyframeSetter and SceneObjectCreator so that it doesn't interfere with reading the file, only when applying things
+		- Finish "Sync Shift" modifier on cameras so that it collects all keyframe data, deletes keyframes, and reapplies them at the shifted time
 			
 		- Re-order all scripts so that they dont use structs/functions that aren't defined before a function call
 			- i.e. in HeaderParser, move GetHeaderData to the very bottom so all support functions are defined before they're called
 			- If it isn't set up like this, the script will always fail the first time it is run when 3ds max has started
+			
+		- Make a macro script with an included icon that people can add to a toolbar?
+			- The macro would merely call the script itself
+			- If they made the script itself a button, would script updates apply to the script that button calls?
+				- If the script gets baked into the button, then the macro to call the real script is what should get baked in
 */
 
 
@@ -58,12 +62,18 @@ rollout CinematicsBuddyUI "" width:235 height:315
 )
 
 -- File importing and scene creation --
+struct StructImportTypes
+(
+	bImportCamera,
+	bImportBall,
+	bImportCars
+)
 rollout Initialize "Import Animation File"
 (	
 	-- Choose which items should be included in the import. If a scene already exists, only allow camera importing
 	groupbox GroupboxImportTypes "" pos:[3,-3] width:71 height:76
 	label LabelImportTypes "Import" pos:[20,5] enabled:false
-	checkbox CheckboxCamera "Camera" checked:true pos:[8,20] enabled:false
+	checkbox CheckboxCamera "Camera" checked:true pos:[8,20] enabled:false tooltip:"Test tooltip"
 	checkbox CheckboxBall "Ball" checked:true pos:[8,37] enabled:false
 	checkbox CheckboxCars "Cars" checked:true pos:[8,54] enabled:false
 	
@@ -77,6 +87,15 @@ rollout Initialize "Import Animation File"
 	groupbox GroupboxCameraName "" pos:[78,28] width:145 height:45
 	label LabelCameraName "Camera Name" pos:[120,35] enabled:false
 	edittext TextboxCameraName "" pos:[80,51] width:137 enabled:false
+	
+	-- FUNCTIONS --
+	function DisableCheckboxes =
+	(
+		CheckboxBall.checked = false
+		CheckboxCars.checked = false
+		CheckboxBall.enabled = false
+		CheckboxCars.enabled = false
+	)
 	
 	-- LOCAL STORAGE --
 	local ImportedFile
@@ -105,6 +124,11 @@ rollout Initialize "Import Animation File"
 				ButtonConfirmImport.enabled = true
 				LabelCameraName.enabled = true
 				TextboxCameraName.enabled = true
+				
+				if $MetadataDummy != undefined do
+				(
+					DisableCheckboxes()
+				)
 			)
 		)
 	)
@@ -125,6 +149,12 @@ rollout Initialize "Import Animation File"
 			if bFoundHeader == true do exit
 		)
 		
+		-- Gather which objects should be imported
+		local ImportTypes = StructImportTypes()
+		ImportTypes.bImportCamera = CheckboxCamera.checked
+		ImportTypes.bImportBall   = CheckboxBall.checked
+		ImportTypes.bImportCars   = CheckboxCars.checked
+		
 		-- Apply animations
 		if $MetadataDummy == undefined then
 		(
@@ -134,12 +164,12 @@ rollout Initialize "Import Animation File"
 			local MetadataDummy = CreateMetadataDummy(HeaderData)
 			
 			-- Create scene objects
-			local SceneObjects = CreateSceneObjects MetadataDummy TextboxCameraName.text
+			local SceneObjects = CreateSceneObjects ImportTypes MetadataDummy TextboxCameraName.text
 			
 			-- Loop through all keyframes and apply them
 			local NumKeyframesFound = 0
 			local MaxAnimationRange = 0
-			while ApplyNextKeyframe ImportedFile SceneObjects &NumKeyframesFound &MaxAnimationRange do ()
+			while ApplyNextKeyframe ImportedFile SceneObjects ImportTypes &NumKeyframesFound &MaxAnimationRange do ()
 			
 			-- Set the animation range to the max keyframe
 			format "Keyframes Found: %\n" NumKeyframesFound
@@ -154,12 +184,17 @@ rollout Initialize "Import Animation File"
 			-- Create only the new camera, but pass in MetadataDummy as part of the struct
 			local SceneObjects = StructNewCamera()
 			SceneObjects.MetadataDummy = $MetadataDummy
-			SceneObjects.CameraObject = FreeCamera name:TextboxCameraName.text
 			
-			-- Loop through all keyframes and apply only the camera information
-			while ApplyNextCameraKeyframe ImportedFile SceneObjects do ()
+			if ImportTypes.bImportCamera == true do
+			(
+				SceneObjects.CameraObject = CreateCamera(TextboxCameraName.text)
+				
+				-- Loop through all keyframes and apply only the camera information
+				while ApplyNextCameraKeyframe ImportedFile SceneObjects do ()
+			)
 		)
 		
+		DisableCheckboxes()
 		Close ImportedFile
 	)
 )
