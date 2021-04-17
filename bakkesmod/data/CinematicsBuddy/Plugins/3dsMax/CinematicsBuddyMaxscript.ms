@@ -10,6 +10,8 @@
 			
 		- Finish "Sync Shift" modifier on cameras so that it collects all keyframe data, deletes keyframes, and reapplies them at the shifted time
 			
+		- Fix the wheel layout in the json file. This will require updating the plugin, maxscript, and ae script
+			
 		- Re-order all scripts so that they dont use structs/functions that aren't defined before a function call
 			- i.e. in HeaderParser, move GetHeaderData to the very bottom so all support functions are defined before they're called
 			- If it isn't set up like this, the script will always fail the first time it is run when 3ds max has started
@@ -53,7 +55,7 @@ rollout CinematicsBuddyUI "" width:235 height:315
 	
 	-- Add colored label showing script version
 	local VersionText = "Version: " + CBScriptVersion
-	hyperlink VersionLabel VersionText color:[125,200,175] enabled:false align:#center --pos:[83,32]
+	hyperlink VersionLabel VersionText color:[125,200,175] enabled:false align:#center
 )
 
 -- File importing and scene creation --
@@ -187,14 +189,27 @@ rollout Initialize "Import Animation File"
 				if FirstKeyframe != undefined do
 				(
 					local SyncData = FindSyncData FirstKeyframe SceneObjects.MetadataDummy
-					
-					-- Loop through all keyframes and apply only the camera information
-					while ApplyNextCameraKeyframe ImportedFile SceneObjects &SyncData do ()   -- SyncData shouldnt be by reference --------------
+					if SyncData.FirstValidKeyframe != undefined then
+					(
+						-- Apply the first keyframe
+						ApplyCameraOnlyKeyframe SyncData.FirstValidKeyframe SceneObjects SyncData		
+						
+						-- Loop through all remaining valid keyframes and apply only the camera information
+						while ApplyNextCameraKeyframe ImportedFile SceneObjects SyncData do ()
+					)
+					else
+					(
+						MessageBox("Cannot sync camera. No keyframes found within MetadataDummy's replay animation range.")
+					)
 				)
 			)
 		)
 		
-		DisableCheckboxes()
+		if $MetadataDummy != undefined do
+		(
+			DisableCheckboxes()
+		)
+		
 		Close ImportedFile
 	)
 )
@@ -223,7 +238,10 @@ rollout ExportCamera "Export Camera To Rocket League"
 -- Export all mesh and camera animations to an external software --
 rollout ExportAll "Export All To Other 3D Program"
 (
-	-- @TODO: Bake all car body and camera animations down
+	-- @TODO: When attempting to export FBX to other package, parenting might not export correctly.
+		-- Create a clone of the car mesh, then bake all of the position/rotation data onto the mesh.
+		-- Add all the cloned cars to the selection, along with the field, ball, and camera. Export selected to FBX.
+			-- Let the user choose the FBX settings? If so, make sure the dialog pops up
 	
 	local TooltipChooseDirectory = "Opens a file explorer for you to choose the output directory. The file will be saved as FBX. The cars, ball, and all cameras will be exported.\n\nNOTE 1: This only exports CinematicsBuddy scene assets, not all elements in the scene.\n\nNOTE 2: Generally this should only be used just after importing the scene so that the raw CinematicsBuddy content can be exported. Behavior is undefined if you edit the scene before exporting."
 	button ButtonChooseDirectory "Export" pos:[152,3] width:70 height:35 tooltip:TooltipChooseDirectory

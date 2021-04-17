@@ -117,22 +117,56 @@ function GetWheelKeyframe ImportedFile =
 (
 	local WheelKeyframe = StructWheelKeyframe()
 	
-	local ThisLine = ReadLine ImportedFile
+	-- Pull the wheel index from the first line
+	local WheelIndexLine = ReadLine ImportedFile
+	local WheelIndexSplit = GetSplitDataLine(WheelIndexLine)
+	if WheelIndexSplit.LineLabel == "]" then
+	(
+		-- The end of the array has been reached
+		return undefined
+	)
+	else
+	(
+		WheelKeyframe.WheelIndex = WheelIndexSplit.LineLabel as integer
+	)
 	
-	-- Check if line is empty or is the closing line of the wheel array
-	local bIsClosingBracket = MatchPattern ThisLine pattern:"*]*"
-	if bIsClosingBracket == true do return undefined
-	if ThisLine.count == 0 do return undefined
-	
-	-- Get the wheel data
-	local SplitLine = GetSplitDataLine(ThisLine)
-	local SplitData = FilterString SplitLine.LineValue ","
-	WheelKeyframe.WheelIndex         = SplitLine.LineLabel as integer
-	WheelKeyframe.SteerAmount        = SplitData[1] as float
-	WheelKeyframe.SuspensionDistance = SplitData[2] as float
-	WheelKeyframe.SpinSpeed          = SplitData[3] as float
+	-- Parse the wheel data
+	while not eof ImportedFile do
+	(
+		local ThisLine = ReadLine ImportedFile
+		if ThisLine.count == 0 do exit
+		
+		local SplitLine = GetSplitDataLine(ThisLine)
+		case SplitLine.LineLabel of
+		(
+			"SA": WheelKeyframe.SteerAmount        = SplitLine.LineValue as float
+			"SD": WheelKeyframe.SuspensionDistance = SplitLine.LineValue as float
+			"SS": WheelKeyframe.SpinSpeed          = SplitLine.LineValue as float
+			"}": exit
+		)
+	)
 	
 	return WheelKeyframe
+)
+
+function GetWheelKeyframes ImportedFile = 
+(
+	local WheelKeyframes = #()
+	
+	while true do
+	(
+		local ThisWheel = GetWheelKeyframe(ImportedFile)
+		if ThisWheel == undefined then
+		(
+			exit
+		)
+		else
+		(
+			append WheelKeyframes ThisWheel
+		)
+	)
+	
+	return WheelKeyframes
 )
 
 function GetBoostBool BoostString = 
@@ -165,38 +199,20 @@ function GetCarKeyframe ImportedFile =
 		CarKeyframe.CarSeenIndex = CarIndexSplit.LineLabel as integer
 	)
 	
-	-- Parse the car data. Wheels are handled differently, hence the boolean
-	local bIsGettingWheels = false
+	-- Parse the car data
 	while not eof ImportedFile do
-	(		
-		if bIsGettingWheels == true then
+	(
+		local ThisLine = ReadLine ImportedFile
+		if ThisLine.count == 0 do exit
+		
+		local SplitLine = GetSplitDataLine(ThisLine)
+		case SplitLine.LineLabel of
 		(
-			-- Let the "GetWheelKeyframe" function handle file parsing until all wheels have been parsed
-			local ThisWheel = GetWheelKeyframe(ImportedFile)
-			if ThisWheel == undefined then
-			(
-				bIsGettingWheels = false
-			)
-			else
-			(
-				append CarKeyframe.WheelKeyframes ThisWheel
-			)
-		)
-		else
-		(
-			-- Parse the rest of the car normally
-			local ThisLine = ReadLine ImportedFile
-			if ThisLine.count == 0 do exit
-			
-			local SplitLine = GetSplitDataLine(ThisLine)
-			case SplitLine.LineLabel of
-			(
-				"L": CarKeyframe.CarLocation = GetLocation3D(SplitLine.LineValue)
-				"R": CarKeyframe.CarRotation = GetRotationFromQuat SplitLine.LineValue EQuatType_Car
-				"B": CarKeyframe.bIsBoosting = GetBoostBool(SplitLine.LineValue)
-				"W": bIsGettingWheels = true
-				"}": exit
-			)
+			"L": CarKeyframe.CarLocation    = GetLocation3D(SplitLine.LineValue)
+			"R": CarKeyframe.CarRotation    = GetRotationFromQuat SplitLine.LineValue EQuatType_Car
+			"B": CarKeyframe.bIsBoosting    = GetBoostBool(SplitLine.LineValue)
+			"W": CarKeyframe.WheelKeyframes = GetWheelKeyframes(ImportedFile)
+			"}": exit
 		)
 	)
 	
