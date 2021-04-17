@@ -158,13 +158,3 @@ function ApplyKeyframe KeyframeData SceneObjects ImportTypes bFirstKeyframe =
 	)
 	set animate off
 )
-
-function ApplyCameraOnlyKeyframe KeyframeData SceneObjects = 
-(
-	-- Get keyframe time as a factor of frames at 60 fps
-	local KeyframeTime = KeyframeData.TimeKeyframe.RealTime * 60
-	
-	set animate on
-	
-	set animate off
-)

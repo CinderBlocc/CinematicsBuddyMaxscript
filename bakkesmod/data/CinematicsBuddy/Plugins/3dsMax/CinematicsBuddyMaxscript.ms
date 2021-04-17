@@ -4,12 +4,7 @@
 	-- Exports rebuilt scene to an animated FBX file to be transferred to other 3D software
 
 /*
-	TODO:
-		- Once MetadataDummy exists, don't allow importing of Ball and Cars, only new Cameras
-			- Create a struct called BooleanFlags that holds information, like what "Import" checkboxes are enabled
-			- Only use them in KeyframeSetter and SceneObjectCreator so that it doesn't interfere with reading the file, only when applying things
-			- At the end of "ButtonConfirmImport pressed", uncheck and disable the Ball and Car checkboxes
-		
+	TODO:		
 		- Importing additional cameras
 			- When adding a new camera, only add the keyframes that exist within the range of keyframes stored in the existing MetadataDummy
 			
@@ -181,16 +176,21 @@ rollout Initialize "Import Animation File"
 		(
 			-- MetadataDummy already exists, so this is not the first import for this scene. Import only the camera if it is checked --
 			
-			-- Create only the new camera, but pass in MetadataDummy as part of the struct
-			local SceneObjects = StructNewCamera()
-			SceneObjects.MetadataDummy = $MetadataDummy
-			
 			if ImportTypes.bImportCamera == true do
 			(
+				local SceneObjects = StructNewCamera()
+				SceneObjects.MetadataDummy = $MetadataDummy
 				SceneObjects.CameraObject = CreateCamera(TextboxCameraName.text)
 				
-				-- Loop through all keyframes and apply only the camera information
-				while ApplyNextCameraKeyframe ImportedFile SceneObjects do ()
+				-- Find the sync point and then apply keyframes from that point forward
+				local FirstKeyframe = GetKeyframe(ImportedFile)
+				if FirstKeyframe != undefined do
+				(
+					local SyncData = FindSyncData FirstKeyframe SceneObjects.MetadataDummy
+					
+					-- Loop through all keyframes and apply only the camera information
+					while ApplyNextCameraKeyframe ImportedFile SceneObjects &SyncData do ()   -- SyncData shouldnt be by reference --------------
+				)
 			)
 		)
 		

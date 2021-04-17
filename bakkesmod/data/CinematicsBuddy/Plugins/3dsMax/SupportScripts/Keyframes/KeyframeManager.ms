@@ -3,6 +3,7 @@
 -- Import Keyframe Getter and Setter scripts so their functions can be called
 FileIn(CBSupportScripts + "Keyframes\\KeyframeGetter.ms")
 FileIn(CBSupportScripts + "Keyframes\\KeyframeSetter.ms")
+FileIn(CBSupportScripts + "Keyframes\\KeyframeSetterAdditionalCamera.ms")
 
 -- MAIN FUNCTION DEFINITION --
 function ApplyNextKeyframe ImportedFile SceneObjects ImportTypes &NumKeyframesFound &MaxAnimationRange =
@@ -29,7 +30,7 @@ function ApplyNextKeyframe ImportedFile SceneObjects ImportTypes &NumKeyframesFo
 )
 
 -- CAMERA ONLY FUNCTION DEFINITION --
-function ApplyNextCameraKeyframe ImportedFile SceneObjects &FirstValidKeyframe &AnimationStartTime = 
+function ApplyNextCameraKeyframe ImportedFile SceneObjects &SyncData = 
 (
 	-- Pass in an empty keyframe for "FirstValidKeyframe"
 		-- When the first keyframe within the ReplayFrame range is found, set that as FirstValidKeyframe
@@ -43,6 +44,17 @@ function ApplyNextCameraKeyframe ImportedFile SceneObjects &FirstValidKeyframe &
 	if KeyframeData == undefined do
 	(
 		return false
+	)
+	
+	-- Find the sync points for MetadataDummy and the start of this file
+	if SyncData.bFirstKeyframe == true do
+	(
+		SyncData = FindSyncPoint KeyframeData SceneObjects
+		if SyncData.FirstValidKeyframe == undefined do
+		(
+			MessageBox("Cannot sync camera. No keyframes found within MetadataDummy's replay animation range.")
+			return false
+		)
 	)
 	
 	-- Find the first valid keyframe, and the time that it was valid
@@ -67,3 +79,14 @@ function ApplyNextCameraKeyframe ImportedFile SceneObjects &FirstValidKeyframe &
 		
 	return true
 )
+
+/*
+- Check the first keyframe of the animation to find its first ReplayFrame value
+	- Assume that this first value is the absolute lowest value
+- IF THE NEW CAMERA'S LOWEST IS BELOW METADATADUMMY'S LOWEST:
+	- Loop through new camera's keyframes until the replay frame equals the lowest metadata frame
+	- AnimationStartTime would be 0 - it might not actually be 0 in all cases, but it'll be easier to assume that
+- IF THE NEW CAMERA'S LOWEST IS ABOVE METADATADUMMY'S LOWEST:
+	- Loop through MetadataDummy's keyframes to find the moment in time that the ReplayFrame matches the lowest frame from new camera
+	- AnimationStartTime would be the time of that keyframe
+*/
