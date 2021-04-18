@@ -7,26 +7,82 @@ FileIn(CBSupportScripts + "Keyframes\\KeyframeSetter.ms")
 struct StructSyncData
 (
 	FirstValidKeyframe,
-	AnimationStartTime
+	AnimationStartTime,
+	bStartedLate
 )
 
 -- SUPPORT FUNCTION DEFINITIONS --
-function FindSyncData FirstKeyframe MetadataDummy = 
+function FindSyncData ImportedFile MetadataDummy = 
 (
 	local SyncData = StructSyncData()
 	SyncData.FirstValidKeyframe = undefined
 	SyncData.AnimationStartTime = -1
+	SyncData.bStartedLate = false
 	
-	/*
-	- Check FirstKeyframe's ReplayFrame value
-		- Assume that it is the absolute lowest value of the new camera's animation range
-	- IF THE NEW CAMERA'S LOWEST IS BELOW METADATADUMMY'S LOWEST:
-		- Loop through new camera's keyframes until the replay frame equals the lowest metadata frame
-		- AnimationStartTime would be 0 - it might not actually be 0 in all cases, but it'll be easier to assume that
-	- IF THE NEW CAMERA'S LOWEST IS ABOVE METADATADUMMY'S LOWEST:
-		- Loop through MetadataDummy's keyframes to find the moment in time that the ReplayFrame matches the lowest frame from new camera
-		- AnimationStartTime would be the time of that keyframe
-	*/
+	local TheModifier = MetadataDummy.modifiers[1]
+	
+	-- Determine the relative time position of the new camera
+	local FirstKeyframe = GetKeyframe(ImportedFile)
+	if FirstKeyframe == undefined then
+	(
+		return SyncData
+	)
+	else
+	(
+		local FirstKeyframeTime = FirstKeyframe.TimeKeyframe.ReplayFrame
+		
+		-- New animation starts before MetadataDummy's animation
+		if FirstKeyframeTime < TheModifier.ReplayStartFrame do
+		(
+			-- Read through the new camera's keyframes until an eligible keyframe is found
+			while not eof ImportedFile do
+			(
+				local NextKeyframe = GetKeyframe(ImportedFile)
+				if NextKeyframe != undefined then
+				(
+					if IsValidKeyframe NextKeyframe MetadataDummy do
+					(
+						SyncData.FirstValidKeyframe = NextKeyframe
+						SyncData.AnimationStartTime = 0
+						return SyncData
+					)
+				)
+				else
+				(
+					return SyncData
+				)
+			)
+		)
+		
+		-- New animation starts after MetadataDummy's animation
+		if FirstKeyframeTime > TheModifier.ReplayStartFrame do
+		(
+			-- Find the moment that MetadataDummy's ReplayCurrentFrame matches the start time of the new camera
+			local MDTimeController = TheModifier.ReplayCurrentFrame.Controller
+			local KeyframeIndex = 1
+			while KeyframeIndex < MDTimeController.Keys.Count do
+			(
+				local MDTimeKeyframe = GetKey MDTimeController KeyframeIndex
+				KeyframeIndex += 1
+				
+				if MDTimeKeyframe.Value >= FirstKeyframeTime do
+				(
+					SyncData.FirstValidKeyframe = FirstKeyframe
+					SyncData.AnimationStartTime = MDTimeKeyframe.Time
+					SyncData.bStartedLate = true
+					return SyncData
+				)
+			)
+		)
+		
+		-- New animation starts at the same time as MetadataDummy's animation
+		if FirstKeyframeTime == TheModifier.ReplayStartFrame do
+		(
+			SyncData.FirstValidKeyframe = FirstKeyframe
+			SyncData.AnimationStartTime = 0
+			return SyncData
+		)
+	)
 	
 	return SyncData
 )
@@ -57,7 +113,7 @@ function GetKeyframeTime KeyframeData SyncData =
 	local Converted = TimeGap * 60
 	
 	-- Shift based on start time from SyncData
-	local FinalTime = TimeGap + SyncData.AnimationStartTime
+	local FinalTime = Converted + SyncData.AnimationStartTime
 	
 	return FinalTime
 )

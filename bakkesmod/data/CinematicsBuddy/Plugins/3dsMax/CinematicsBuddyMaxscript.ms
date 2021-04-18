@@ -4,11 +4,9 @@
 	-- Exports rebuilt scene to an animated FBX file to be transferred to other 3D software
 
 /*
-	TODO:		
-		- Importing additional cameras
-			- When adding a new camera, only add the keyframes that exist within the range of keyframes stored in the existing MetadataDummy
-			
+	TODO:			
 		- Finish "Sync Shift" modifier on cameras so that it collects all keyframe data, deletes keyframes, and reapplies them at the shifted time
+			- "MoveKeys TheCamera.pos <SpecifiedTime>" is a built in function
 			
 		- Fix the wheel layout in the json file. This will require updating the plugin, maxscript, and ae script
 			
@@ -185,22 +183,31 @@ rollout Initialize "Import Animation File"
 				SceneObjects.CameraObject = CreateCamera(TextboxCameraName.text)
 				
 				-- Find the sync point and then apply keyframes from that point forward
-				local FirstKeyframe = GetKeyframe(ImportedFile)
-				if FirstKeyframe != undefined do
+				local SyncData = FindSyncData ImportedFile SceneObjects.MetadataDummy
+				if SyncData.FirstValidKeyframe != undefined then
 				(
-					local SyncData = FindSyncData FirstKeyframe SceneObjects.MetadataDummy
-					if SyncData.FirstValidKeyframe != undefined then
+					-- Apply the first keyframe
+					ApplyCameraOnlyKeyframe SyncData.FirstValidKeyframe SceneObjects SyncData		
+					
+					-- Loop through all remaining valid keyframes and apply only the camera information
+					while ApplyNextCameraKeyframe ImportedFile SceneObjects SyncData do ()
+					
+					-- Maxscript automatically applies a keyframe at time 0 which is undesired if camera animation starts late
+					if SyncData.bStartedLate == true do
 					(
-						-- Apply the first keyframe
-						ApplyCameraOnlyKeyframe SyncData.FirstValidKeyframe SceneObjects SyncData		
-						
-						-- Loop through all remaining valid keyframes and apply only the camera information
-						while ApplyNextCameraKeyframe ImportedFile SceneObjects SyncData do ()
+						local TheCamera = SceneObjects.CameraObject
+						DeleteKey TheCamera.Position.X_Position.Controller 1
+						DeleteKey TheCamera.Position.Y_Position.Controller 1
+						DeleteKey TheCamera.Position.Z_Position.Controller 1
+						DeleteKey TheCamera.Rotation.X_Rotation.Controller 1
+						DeleteKey TheCamera.Rotation.Y_Rotation.Controller 1
+						DeleteKey TheCamera.Rotation.Z_Rotation.Controller 1
+						DeleteKey TheCamera.FOV.Controller 1
 					)
-					else
-					(
-						MessageBox("Cannot sync camera. No keyframes found within MetadataDummy's replay animation range.")
-					)
+				)
+				else
+				(
+					MessageBox("Cannot sync camera. No keyframes found within MetadataDummy's replay animation range.")
 				)
 			)
 		)
@@ -210,6 +217,7 @@ rollout Initialize "Import Animation File"
 			DisableCheckboxes()
 		)
 		
+		ButtonConfirmImport.enabled = false
 		Close ImportedFile
 	)
 )
