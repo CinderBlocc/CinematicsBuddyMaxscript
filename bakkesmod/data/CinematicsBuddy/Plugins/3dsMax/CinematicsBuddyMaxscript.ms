@@ -4,11 +4,9 @@
 	-- Exports rebuilt scene to an animated FBX file to be transferred to other 3D software
 
 /*
-	TODO:			
-		- Finish "Sync Shift" modifier on cameras so that it collects all keyframe data, deletes keyframes, and reapplies them at the shifted time
-			- "MoveKeys TheCamera.pos <SpecifiedTime>" is a built in function
-			
-		- Fix the wheel layout in the json file. This will require updating the plugin, maxscript, and ae script
+	TODO:
+		- AnimationImporting
+			- Export selected camera's animation from 3ds max to RL
 			
 		- Re-order all scripts so that they dont use structs/functions that aren't defined before a function call
 			- i.e. in HeaderParser, move GetHeaderData to the very bottom so all support functions are defined before they're called
@@ -130,84 +128,87 @@ rollout Initialize "Import Animation File"
 	
 	on ButtonConfirmImport pressed do
 	(
-		-- Configure unit and timeline settings
-		FrameRate = 60
-		TimeDisplayMode = #Frames
-		Units.DisplayType = #Metric
-		Units.SystemType = #Centimeters
-		
-		-- Find the "BEGIN ANIMATION" header
-		while not eof ImportedFile do
+		undo "CinematicsBuddy Import" on
 		(
-			local ThisLine = ReadLine ImportedFile
-			local bFoundHeader = MatchPattern ThisLine pattern:"*BEGIN ANIMATION*"
-			if bFoundHeader == true do exit
-		)
-		
-		-- Gather which objects should be imported
-		local ImportTypes = StructImportTypes()
-		ImportTypes.bImportCamera = CheckboxCamera.checked
-		ImportTypes.bImportBall   = CheckboxBall.checked
-		ImportTypes.bImportCars   = CheckboxCars.checked
-		
-		-- Apply animations
-		if $MetadataDummy == undefined then
-		(
-			-- MetadataDummy does not exist yet, so this is the first import for this scene. Import all checked objects --
+			-- Configure unit and timeline settings
+			FrameRate = 60
+			TimeDisplayMode = #Frames
+			Units.DisplayType = #Metric
+			Units.SystemType = #Centimeters
 			
-			-- Create MetadataDummy to store scene information
-			local MetadataDummy = CreateMetadataDummy(HeaderData)
-			
-			-- Create scene objects
-			local SceneObjects = CreateSceneObjects ImportTypes MetadataDummy TextboxCameraName.text
-			
-			-- Loop through all keyframes and apply them
-			local NumKeyframesFound = 0
-			local MaxAnimationRange = 0
-			while ApplyNextKeyframe ImportedFile SceneObjects ImportTypes &NumKeyframesFound &MaxAnimationRange do ()
-			
-			-- Set the animation range to the max keyframe
-			format "Keyframes Found: %\n" NumKeyframesFound
-			format "Animation Duration: %\n" MaxAnimationRange
-			local MaxAnimationRangeFrames = MaxAnimationRange * 60
-			AnimationRange = (interval 0 MaxAnimationRangeFrames)
-		)
-		else
-		(
-			-- MetadataDummy already exists, so this is not the first import for this scene. Import only the camera if it is checked --
-			
-			if ImportTypes.bImportCamera == true do
+			-- Find the "BEGIN ANIMATION" header
+			while not eof ImportedFile do
 			(
-				local SceneObjects = StructNewCamera()
-				SceneObjects.MetadataDummy = $MetadataDummy
-				SceneObjects.CameraObject = CreateCamera(TextboxCameraName.text)
+				local ThisLine = ReadLine ImportedFile
+				local bFoundHeader = MatchPattern ThisLine pattern:"*BEGIN ANIMATION*"
+				if bFoundHeader == true do exit
+			)
+			
+			-- Gather which objects should be imported
+			local ImportTypes = StructImportTypes()
+			ImportTypes.bImportCamera = CheckboxCamera.checked
+			ImportTypes.bImportBall   = CheckboxBall.checked
+			ImportTypes.bImportCars   = CheckboxCars.checked
+			
+			-- Apply animations
+			if $MetadataDummy == undefined then
+			(
+				-- MetadataDummy does not exist yet, so this is the first import for this scene. Import all checked objects --
 				
-				-- Find the sync point and then apply keyframes from that point forward
-				local SyncData = FindSyncData ImportedFile SceneObjects.MetadataDummy
-				if SyncData.FirstValidKeyframe != undefined then
+				-- Create MetadataDummy to store scene information
+				local MetadataDummy = CreateMetadataDummy(HeaderData)
+				
+				-- Create scene objects
+				local SceneObjects = CreateSceneObjects ImportTypes MetadataDummy TextboxCameraName.text
+				
+				-- Loop through all keyframes and apply them
+				local NumKeyframesFound = 0
+				local MaxAnimationRange = 0
+				while ApplyNextKeyframe ImportedFile SceneObjects ImportTypes &NumKeyframesFound &MaxAnimationRange do ()
+				
+				-- Set the animation range to the max keyframe
+				format "Keyframes Found: %\n" NumKeyframesFound
+				format "Animation Duration: %\n" MaxAnimationRange
+				local MaxAnimationRangeFrames = MaxAnimationRange * 60
+				AnimationRange = (interval 0 MaxAnimationRangeFrames)
+			)
+			else
+			(
+				-- MetadataDummy already exists, so this is not the first import for this scene. Import only the camera if it is checked --
+				
+				if ImportTypes.bImportCamera == true do
 				(
-					-- Apply the first keyframe
-					ApplyCameraOnlyKeyframe SyncData.FirstValidKeyframe SceneObjects SyncData		
+					local SceneObjects = StructNewCamera()
+					SceneObjects.MetadataDummy = $MetadataDummy
+					SceneObjects.CameraObject = CreateCamera(TextboxCameraName.text)
 					
-					-- Loop through all remaining valid keyframes and apply only the camera information
-					while ApplyNextCameraKeyframe ImportedFile SceneObjects SyncData do ()
-					
-					-- Maxscript automatically applies a keyframe at time 0 which is undesired if camera animation starts late
-					if SyncData.bStartedLate == true do
+					-- Find the sync point and then apply keyframes from that point forward
+					local SyncData = FindSyncData ImportedFile SceneObjects.MetadataDummy
+					if SyncData.FirstValidKeyframe != undefined then
 					(
-						local TheCamera = SceneObjects.CameraObject
-						DeleteKey TheCamera.Position.X_Position.Controller 1
-						DeleteKey TheCamera.Position.Y_Position.Controller 1
-						DeleteKey TheCamera.Position.Z_Position.Controller 1
-						DeleteKey TheCamera.Rotation.X_Rotation.Controller 1
-						DeleteKey TheCamera.Rotation.Y_Rotation.Controller 1
-						DeleteKey TheCamera.Rotation.Z_Rotation.Controller 1
-						DeleteKey TheCamera.FOV.Controller 1
+						-- Apply the first keyframe
+						ApplyCameraOnlyKeyframe SyncData.FirstValidKeyframe SceneObjects SyncData		
+						
+						-- Loop through all remaining valid keyframes and apply only the camera information
+						while ApplyNextCameraKeyframe ImportedFile SceneObjects SyncData do ()
+						
+						-- Maxscript automatically applies a keyframe at time 0 which is undesired if camera animation starts late
+						if SyncData.bStartedLate == true do
+						(
+							local TheCamera = SceneObjects.CameraObject
+							DeleteKey TheCamera.Position.X_Position.Controller 1
+							DeleteKey TheCamera.Position.Y_Position.Controller 1
+							DeleteKey TheCamera.Position.Z_Position.Controller 1
+							DeleteKey TheCamera.Rotation.X_Rotation.Controller 1
+							DeleteKey TheCamera.Rotation.Y_Rotation.Controller 1
+							DeleteKey TheCamera.Rotation.Z_Rotation.Controller 1
+							DeleteKey TheCamera.FOV.Controller 1
+						)
 					)
-				)
-				else
-				(
-					MessageBox("Cannot sync camera. No keyframes found within MetadataDummy's replay animation range.")
+					else
+					(
+						MessageBox("Cannot sync camera. No keyframes found within MetadataDummy's replay animation range.")
+					)
 				)
 			)
 		)
