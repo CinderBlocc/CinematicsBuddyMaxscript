@@ -8,6 +8,9 @@
 		- AnimationImporting
 			- Export selected camera's animation from 3ds max to RL
 			
+		- Export all CinematicsBuddy assets (with baked animations) to external program
+			- Doesn't the FBX prompt give an option to bake animations? Maybe making a clone won't be necessary
+			
 		- Re-order all scripts so that they dont use structs/functions that aren't defined before a function call
 			- i.e. in HeaderParser, move GetHeaderData to the very bottom so all support functions are defined before they're called
 			- If it isn't set up like this, the script will always fail the first time it is run when 3ds max has started
