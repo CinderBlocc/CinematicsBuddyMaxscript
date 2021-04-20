@@ -27,7 +27,7 @@ global CBScriptVersion = "0.9.9"
 -- Get relative paths
 global CBScriptLocation = PathConfig.RemovePathLeaf (GetSourceFileName()) + "\\"
 global CBSupportScripts = CBScriptLocation + "SupportScripts\\"
-global CBAssetsLocation = CBScriptLocation + "..\\..\\CinematicsBuddyAssets\\"
+global CBAssetsLocation = CBScriptLocation + "..\\CinematicsBuddyAssets\\"
 global CBImageAssets = CBAssetsLocation + "Images\\"
 global CBModelAssets = CBAssetsLocation + "Models\\"
 
