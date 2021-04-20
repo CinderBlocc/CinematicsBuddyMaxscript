@@ -5,9 +5,6 @@
 
 /*
 	TODO:
-		- AnimationImporting
-			- Export selected camera's animation from 3ds max to RL
-			
 		- Export all CinematicsBuddy assets (with baked animations) to external program
 			- Doesn't the FBX prompt give an option to bake animations? Maybe making a clone won't be necessary
 			
@@ -43,14 +40,14 @@ try(DestroyDialog CinematicsBuddyUI)
 catch()
 
 -- MAIN UI CONTAINER --
-rollout CinematicsBuddyUI "" width:235 height:315
+rollout CinematicsBuddyUI "" width:235 height:235 -- 315 when ExportCamera rollout is added
 (	
 	-- Add banner image
 	local BannerImageBitmap = OpenBitMap(CBImageAssets + "CinematicsBuddyBanner.jpg")
 	imgtag BannerImage bitmap:BannerImageBitmap pos:[5,5] width:225 height:30.7 opacity:1.0
 	
 	-- Create a subrollout that contains all the other subrollouts
-	subrollout RolloutContainer "Rollout Container" pos:[0,35] width:239 height:255
+	subrollout RolloutContainer "Rollout Container" pos:[0,35] width:239 height:177 -- 255 when ExportCamera rollout is added
 	
 	-- Add colored label showing script version
 	local VersionText = "Version: " + CBScriptVersion
@@ -226,6 +223,7 @@ rollout Initialize "Import Animation File"
 	)
 )
 
+/* @TODO: Implement this section at a later date
 -- Export selected camera's animation to Rocket League --
 rollout ExportCamera "Export Camera To Rocket League"
 (
@@ -246,6 +244,7 @@ rollout ExportCamera "Export Camera To Rocket League"
 		
 	)
 )
+*/
 
 -- Export all mesh and camera animations to an external software --
 rollout ExportAll "Export All To Other 3D Program"
@@ -269,5 +268,5 @@ rollout ExportAll "Export All To Other 3D Program"
 -- Create the window and add the subrollouts
 CreateDialog  CinematicsBuddyUI style: #(#style_titlebar, #style_border, #style_sysmenu, #style_minimizebox)
 AddSubrollout CinematicsBuddyUI.RolloutContainer Initialize
-AddSubrollout CinematicsBuddyUI.RolloutContainer ExportCamera
+--AddSubrollout CinematicsBuddyUI.RolloutContainer ExportCamera
 AddSubrollout CinematicsBuddyUI.RolloutContainer ExportAll
