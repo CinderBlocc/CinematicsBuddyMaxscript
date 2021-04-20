@@ -4,10 +4,7 @@
 	-- Exports rebuilt scene to an animated FBX file to be transferred to other 3D software
 
 /*
-	TODO:
-		- Export all CinematicsBuddy assets (with baked animations) to external program
-			- Doesn't the FBX prompt give an option to bake animations? Maybe making a clone won't be necessary
-			
+	TODO:			
 		- Re-order all scripts so that they dont use structs/functions that aren't defined before a function call
 			- i.e. in HeaderParser, move GetHeaderData to the very bottom so all support functions are defined before they're called
 			- If it isn't set up like this, the script will always fail the first time it is run when 3ds max has started
@@ -16,6 +13,11 @@
 			- The macro would merely call the script itself
 			- If they made the script itself a button, would script updates apply to the script that button calls?
 				- If the script gets baked into the button, then the macro to call the real script is what should get baked in
+				
+		- Export all CinematicsBuddy assets (with baked animations) to external program
+			- Doesn't the FBX prompt give an option to bake animations? Maybe making a clone won't be necessary
+			
+		- Export camera
 */
 
 
@@ -25,7 +27,7 @@ global CBScriptVersion = "0.9.9"
 -- Get relative paths
 global CBScriptLocation = PathConfig.RemovePathLeaf (GetSourceFileName()) + "\\"
 global CBSupportScripts = CBScriptLocation + "SupportScripts\\"
-global CBAssetsLocation = CBScriptLocation + "..\\CinematicsBuddyAssets\\"
+global CBAssetsLocation = CBScriptLocation + "..\\..\\CinematicsBuddyAssets\\"
 global CBImageAssets = CBAssetsLocation + "Images\\"
 global CBModelAssets = CBAssetsLocation + "Models\\"
 
@@ -40,14 +42,14 @@ try(DestroyDialog CinematicsBuddyUI)
 catch()
 
 -- MAIN UI CONTAINER --
-rollout CinematicsBuddyUI "" width:235 height:235 -- 315 when ExportCamera rollout is added
+rollout CinematicsBuddyUI "" width:235 height:168 -- 315 when all rollouts are added
 (	
 	-- Add banner image
 	local BannerImageBitmap = OpenBitMap(CBImageAssets + "CinematicsBuddyBanner.jpg")
 	imgtag BannerImage bitmap:BannerImageBitmap pos:[5,5] width:225 height:30.7 opacity:1.0
 	
 	-- Create a subrollout that contains all the other subrollouts
-	subrollout RolloutContainer "Rollout Container" pos:[0,35] width:239 height:177 -- 255 when ExportCamera rollout is added
+	subrollout RolloutContainer "Rollout Container" pos:[0,35] width:239 height:108 -- 255 when all rollouts are added
 	
 	-- Add colored label showing script version
 	local VersionText = "Version: " + CBScriptVersion
@@ -246,6 +248,7 @@ rollout ExportCamera "Export Camera To Rocket League"
 )
 */
 
+/* @TODO: Implement this section at a later date
 -- Export all mesh and camera animations to an external software --
 rollout ExportAll "Export All To Other 3D Program"
 (
@@ -264,9 +267,10 @@ rollout ExportAll "Export All To Other 3D Program"
 		
 	)
 )
+*/
 
 -- Create the window and add the subrollouts
 CreateDialog  CinematicsBuddyUI style: #(#style_titlebar, #style_border, #style_sysmenu, #style_minimizebox)
 AddSubrollout CinematicsBuddyUI.RolloutContainer Initialize
 --AddSubrollout CinematicsBuddyUI.RolloutContainer ExportCamera
-AddSubrollout CinematicsBuddyUI.RolloutContainer ExportAll
+--AddSubrollout CinematicsBuddyUI.RolloutContainer ExportAll
