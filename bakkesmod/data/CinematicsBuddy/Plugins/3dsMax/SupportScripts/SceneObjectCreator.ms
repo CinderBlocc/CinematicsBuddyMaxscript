@@ -1,10 +1,5 @@
 -- SceneObjectCreator creates the objects necessary to rebuild the Rocket League scene inside 3ds Max.
 
-/*
-	TODO:
-		- Create the camera
-*/
-
 -- Import additional scripts so their functions can be called
 FileIn(CBSupportScripts + "CarDummy.ms")
 FileIn(CBSupportScripts + "CameraCreator.ms")

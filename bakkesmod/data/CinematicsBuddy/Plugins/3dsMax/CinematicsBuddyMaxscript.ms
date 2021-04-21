@@ -4,25 +4,16 @@
 	-- Exports rebuilt scene to an animated FBX file to be transferred to other 3D software
 
 /*
-	TODO:			
-		- Re-order all scripts so that they dont use structs/functions that aren't defined before a function call
-			- i.e. in HeaderParser, move GetHeaderData to the very bottom so all support functions are defined before they're called
-			- If it isn't set up like this, the script will always fail the first time it is run when 3ds max has started
-			
-		- Make a macro script with an included icon that people can add to a toolbar?
-			- The macro would merely call the script itself
-			- If they made the script itself a button, would script updates apply to the script that button calls?
-				- If the script gets baked into the button, then the macro to call the real script is what should get baked in
-				
+	TODO:
 		- Export all CinematicsBuddy assets (with baked animations) to external program
 			- Doesn't the FBX prompt give an option to bake animations? Maybe making a clone won't be necessary
 			
-		- Export camera
+		- Export camera to Rocket League
 */
 
 
 -- Information about the script
-global CBScriptVersion = "0.9.9"
+global CBScriptVersion = "0.9.9a"
 
 -- Get relative paths
 global CBScriptLocation = PathConfig.RemovePathLeaf (GetSourceFileName()) + "\\"

@@ -38,7 +38,7 @@ function GetLocation3D VectorString =
 	return OutputVector
 )
 
--- Pseudo enum in case each rotation needs to be converted differently for some dumb reason
+-- Pseudo enum because some rotations are converted differently
 global EQuatType_Camera = 0
 global EQuatType_Ball   = 1
 global EQuatType_Car    = 2
