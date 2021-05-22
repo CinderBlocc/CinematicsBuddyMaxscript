@@ -10,11 +10,42 @@
 		- All mesh files are assumed to be in the /CinematicsBuddyAssets/Models/ folder
 			- You can change that in the ProxyOctaneRigMain function if you want to use a different folder
 		- Wheels indices are as follows:
-			- 1: Front left
-			- 2: Front right
-			- 3: Back left
-			- 4: Back right
+			- 1 (0 in UI): Front left
+			- 2 (1 in UI): Front right
+			- 3 (2 in UI): Back left
+			- 4 (3 in UI): Back right
 */
+
+
+-- This should be most of what you edit per car script
+struct RigCustomization
+(
+	-- Create local variables (not global) to easily access models folder relative to script location
+	-- If you don't want to use relative paths, you could define the full path to your models' locations
+	ScriptLocation = PathConfig.RemovePathLeaf (GetSourceFileName()) + "\\",
+	ModelsLocation = ScriptLocation + "..\\..\\CinematicsBuddyAssets\\Models\\",
+	
+	-- Which car file to import
+	CarFile = "OctaneProxyBody.FBX",
+	ImportedCarName = "RL_OCTANE_PROXY_BODY",
+	
+	-- Which wheel file to import
+	WheelFile = "WheelProxy.FBX",
+	ImportedWheelName = "RL_WHEEL_PROXY",
+	
+	-- Color of dummies
+	DummyColor = [14,255,2],
+	
+	-- Locations of rig pieces (symmetric, so only define left side)
+	FrontWheelLocation           = [ 52.5, 27.5, -5.5],
+	BackWheelLocation            = [-34.0, 30.5, -4.0],
+	FrontSuspensionLowerLocation = [ 52.5,  4.5, -5.5],
+	BackSuspensionLowerLocation  = [-34.0,  6.0, -4.0],
+	FrontSuspensionUpperLocation = [ 52.5,  7.0,  7.0],
+	BackSuspensionUpperLocation  = [-34.0, 17.5, 16.5],
+	BoostEmitterLocation         = [-47.0,  7.0,  8.0]
+)
+
 
 ------------------
 -- DUMMY PARENT --
@@ -28,7 +59,7 @@ struct ProxyRigCarInfo
 function GetDummyParentAndDeleteSelectedMesh =
 (
 	-- Make sure an object is selected
-	if selection == undefined do
+	if selection.count < 1 do
 	(
 		MessageBox("Nothing is selected. Please select the car mesh you want to replace.")
 		return undefined
@@ -39,7 +70,7 @@ function GetDummyParentAndDeleteSelectedMesh =
 	local DummyParent = SelectedObject.parent
 	
 	-- Ensure the mesh is selected and not the dummy
-	if SuperClassOf SelectedObject != Geometry do
+	if SuperClassOf SelectedObject != GeometryClass do
 	(
 		MessageBox("Selection is not geometry. Please select the car mesh you want to replace.")
 		return undefined
@@ -48,7 +79,7 @@ function GetDummyParentAndDeleteSelectedMesh =
 	-- Ensure the mesh has a dummy as its parent
 	if DummyParent != undefined then
 	(
-		if SuperClassOf DummyParent != Helpers do
+		if SuperClassOf DummyParent != Helper do
 		(
 			MessageBox("Selection's parent is not a dummy. Please select a valid CinematicsBuddy imported car mesh.")
 			return undefined
@@ -86,8 +117,8 @@ function GetCarInfo DummyParent =
 	
 	local TheModifier = DummyParent.Modifiers[1]
 	CarInfo.CarName = TheModifier.CarName
-	CarInfo.CarFrontWheelRadius = CarFrontWheelRadius
-	CarInfo.CarBackWheelRadius  = CarBackWheelRadius
+	CarInfo.CarFrontWheelRadius = TheModifier.CarFrontWheelRadius
+	CarInfo.CarBackWheelRadius  = TheModifier.CarBackWheelRadius
 	
 	return CarInfo
 )
@@ -101,31 +132,28 @@ struct ProxyRigImportedModels
 	BodyMesh  = undefined,
 	WheelMesh = undefined
 )
-function ImportProxyMeshes ModelsLocation WheelFile =
+function ImportProxyMeshes =
 (
+	local CustomizationInfo = RigCustomization()
+	
 	-- Create empty struct that will be filled with the models and returned so other functions can access the models
 	local TheMeshes = ProxyRigImportedModels()
 	
 	-- Import the Octane proxy body mesh and assign it to the output struct
-	-- Use the name of the imported mesh to get a handle to it. Unfortunately I don't know of a better way of accessing a newly imported mesh
-	local BodyMeshLocation = ModelsLocation + "OctaneProxyBody.FBX"
+	local BodyMeshLocation = CustomizationInfo.ModelsLocation + CustomizationInfo.CarFile
 	ImportFile BodyMeshLocation #noPrompt
-	TheMeshes.BodyMesh = $RL_OCTANE_PROXY_BODY
+	TheMeshes.BodyMesh = GetNodeByName(CustomizationInfo.ImportedCarName)
 	
-	-- Import the chosen wheel mesh and assign it based on the name that was provided in WheelFile
-	local WheelMeshLocation = ModelsLocation + WheelFile
+	-- Import the proxy wheel mesh and assign it to the output struct
+	local WheelMeshLocation = CustomizationInfo.ModelsLocation + CustomizationInfo.WheelFile
 	ImportFile WheelMeshLocation #noPrompt
-	case WheelFile of
-	(
-		"WheelProxy.FBX": TheMeshes.WheelMesh = $RL_WHEEL_PROXY
-		-- "OtherFile1.FBX": TheMeshes.WheelMesh = $OTHER_WHEEL_MESH_NAME_1
-		-- "OtherFile2.FBX": TheMeshes.WheelMesh = $OTHER_WHEEL_MESH_NAME_2
-		-- etc. for more wheel options
-	)
+	TheMeshes.WheelMesh = GetNodeByName(CustomizationInfo.ImportedWheelName)
 	
-	-- Make sure both objects are at full scale
-	if TheMeshes.BodyMesh  != undefined do TheMeshes.BodyMesh.scale  = [1,1,1]
-	if TheMeshes.WheelMesh != undefined do TheMeshes.WheelMesh.scale = [1,1,1]
+	-- Ensure both objects are at full scale. Warn if either is invalid.
+	if TheMeshes.BodyMesh != undefined then TheMeshes.BodyMesh.scale = [1,1,1]
+	else MessageBox("TheMeshes.BodyMesh is undefined")
+	if TheMeshes.WheelMesh != undefined then TheMeshes.WheelMesh.scale = [1,1,1]
+	else MessageBox("TheMeshes.WheelMesh is undefined")
 	
 	-- Return the struct so the calling function can use the objects
 	return TheMeshes
@@ -138,12 +166,20 @@ function ImportProxyMeshes ModelsLocation WheelFile =
 struct ProxyRigOctane
 (
 	RootObject = undefined,
-	CarMesh    = undefined,
+	BodyMesh   = undefined,
 	WheelMeshes       = #(),
 	BoostEmitters     = #(),
-	SuspensionDummies = #(),
 	SteeringDummies   = #(),
-	SpinningDummies   = #()
+	SpinningDummies   = #(),
+	SuspensionLowerDummies = #(),
+	SuspensionUpperDummies = #()
+)
+function ProxyRigMirrorObject ObjectToMirror OriginalObject bInvertScale =
+(
+	ObjectToMirror.transform = OriginalObject.transform
+	ObjectToMirror.pos.y *= -1
+	
+	if bInvertScale do ObjectToMirror.scale.y *= -1
 )
 function ProxyRigPlaceWheels TheMeshes TheRig CarInfo = 
 (
@@ -151,35 +187,103 @@ function ProxyRigPlaceWheels TheMeshes TheRig CarInfo =
 	for i = 1 to 4 do
 	(
 		MaxOps.CloneNodes TheMeshes.WheelMesh cloneType:#copy newNodes:&WheelMeshNode #nodialog
-		Append TheRig.WheelMeshes WheelMeshNode[1]
+		local NewWheel = WheelMeshNode[1]
+		NewWheel.name = CarInfo.CarName + " WHEEL " + ((i - 1) as string)
+		Append TheRig.WheelMeshes NewWheel
 	)
 	
 	-- Delete the original wheel mesh
 	delete TheMeshes.WheelMesh
 	
 	-- Location and scale variables
-	local FrontLeftLocation = [ 52.5, 27.5, -5.5]
-	local BackLeftLocation  = [-34.0, 30.5, -4.0]
+	local CustomizationInfo = RigCustomization()
 	local BackScaleRatio = CarInfo.CarBackWheelRadius / CarInfo.CarFrontWheelRadius
 	
-	--Transform the wheels
+	-- Transform the front wheels
+	TheRig.WheelMeshes[1].pos = CustomizationInfo.FrontWheelLocation
+	ProxyRigMirrorObject TheRig.WheelMeshes[2] TheRig.WheelMeshes[1] true
+	
+	-- Transform the back wheels
+	TheRig.WheelMeshes[3].pos = CustomizationInfo.BackWheelLocation
+	ProxyRigMirrorObject TheRig.WheelMeshes[4] TheRig.WheelMeshes[3] true
+	TheRig.WheelMeshes[3].scale *= [BackScaleRatio, 1, BackScaleRatio]
+	TheRig.WheelMeshes[4].scale *= [BackScaleRatio, 1, BackScaleRatio]
+)
+function GenerateProxyOctaneRigDummies TheRig CarInfo = 
+(
+	local CustomizationInfo = RigCustomization()
+	
+	-- Create the root object that all elements will be bound to
+	local RootObjectName = CarInfo.CarName + " ROOT"
+	TheRig.RootObject = PointHelperObj name:RootObjectName cross:false box:true size:100 wirecolor:CustomizationInfo.DummyColor
+	
+	-- Create arrays of transforms to iterate dummy creation
+	local WheelLocations = #()
+	local SuspensionLowerLocations = #()
+	local SuspensionUpperLocations = #()
+	local Scales = #()
+	append WheelLocations  CustomizationInfo.FrontWheelLocation
+	append WheelLocations (CustomizationInfo.FrontWheelLocation * [1, -1, 1])
+	append WheelLocations  CustomizationInfo.BackWheelLocation
+	append WheelLocations (CustomizationInfo.BackWheelLocation * [1, -1, 1])
+	append SuspensionLowerLocations  CustomizationInfo.FrontSuspensionLowerLocation
+	append SuspensionLowerLocations (CustomizationInfo.FrontSuspensionLowerLocation * [1, -1, 1])
+	append SuspensionLowerLocations  CustomizationInfo.BackSuspensionLowerLocation
+	append SuspensionLowerLocations (CustomizationInfo.BackSuspensionLowerLocation * [1, -1, 1])
+	append SuspensionUpperLocations  CustomizationInfo.FrontSuspensionUpperLocation
+	append SuspensionUpperLocations (CustomizationInfo.FrontSuspensionUpperLocation * [1, -1, 1])
+	append SuspensionUpperLocations  CustomizationInfo.BackSuspensionUpperLocation
+	append SuspensionUpperLocations (CustomizationInfo.BackSuspensionUpperLocation * [1, -1, 1])
+	local BackScaleRatio = CarInfo.CarBackWheelRadius / CarInfo.CarFrontWheelRadius
+	append Scales 1
+	append Scales 1
+	append Scales BackScaleRatio
+	append Scales BackScaleRatio
+	
+	-- Create the dummies
+	for i = 1 to 4 do
+	(		
+		local SteeringName  = TheRig.WheelMeshes[i].name + " STEERING"
+		local SteeringDummy = PointHelperObj name:SteeringName cross:false box:true axistripod:false size:15 wirecolor:CustomizationInfo.DummyColor
+		SteeringDummy.pos   = WheelLocations[i]
+		append TheRig.SteeringDummies SteeringDummy
+		
+		local SpinningName  = TheRig.WheelMeshes[i].name + " SPINNING"
+		local SpinningDummy = PointHelperObj name:SpinningName cross:false box:true axistripod:false size:(35*Scales[i]) wirecolor:CustomizationInfo.DummyColor
+		SpinningDummy.pos   = WheelLocations[i]
+		append TheRig.SpinningDummies SpinningDummy
+		
+		local SuspensionLowerName   = TheRig.WheelMeshes[i].name + " SUSPENSION LOWER"
+		local SuspensionLowerDummy = PointHelperObj name:SuspensionLowerName cross:false box:true axistripod:false size:10 wirecolor:CustomizationInfo.DummyColor
+		SuspensionLowerDummy.pos    = SuspensionLowerLocations[i]
+		append TheRig.SuspensionLowerDummies SuspensionLowerDummy
+		
+		local SuspensionUpperName   = TheRig.WheelMeshes[i].name + " SUSPENSION UPPER"
+		local SuspensionUpperDummy = PointHelperObj name:SuspensionUpperName cross:false box:true axistripod:false size:10 wirecolor:CustomizationInfo.DummyColor
+		SuspensionUpperDummy.pos    = SuspensionUpperLocations[i]
+		append TheRig.SuspensionUpperDummies SuspensionUpperDummy
+	)
+)
+function GenerateProxyOctaneBoostEmitters TheRig CarInfo = 
+(
 	
 )
 function GenerateProxyOctaneRig TheMeshes CarInfo = 
 (
 	local TheRig = ProxyRigOctane()
 	
-	-- Create the root object that all elements will be bound to
-	local RootObjectName = CarInfo.CarName + " ROOT"
-	TheRig.RootObject = PointHelperObj name:RootObjectName cross:false box:true size:100 wirecolor:[14,255,2]
-	
 	-- Assign the car mesh to the rig and rename it
-	TheRig.CarMesh = TheMeshes.CarMesh
-	TheRig.CarMesh.name = CarInfo.CarName + " BODY MESH"
-	TheRig.CarMesh.parent = TheRig.RootObject
+	TheRig.BodyMesh = TheMeshes.BodyMesh
+	TheRig.BodyMesh.name = CarInfo.CarName + " BODY MESH"
 	
-	-- Put the wheel meshes in the right places
+	-- Put the wheel meshes in the right places and name them
 	ProxyRigPlaceWheels TheMeshes TheRig CarInfo
+	
+	-- Generate all of the necessary dummy objects
+	GenerateProxyOctaneRigDummies TheRig CarInfo
+	
+	-- Generate boost emitters
+	GenerateProxyOctaneBoostEmitters TheRig CarInfo
 )
 
 
@@ -211,29 +315,22 @@ function ProxyOctaneRigMain =
 	-- Obtain selected mesh's parent and delete the mesh
 	-- If the selected object was not a mesh or had no parent with a valid modifier, it will be undefined
 	local DummyParent = GetDummyParentAndDeleteSelectedMesh()
-	if DummyParent == undefined do return
+	if DummyParent == undefined do return false
 	
 	-- Get car name and wheel sizes from parent
 	local CarInfo = GetCarInfo(DummyParent)
 	
-	-- Create local variables (not global) to easily access models folder relative to script location
-	-- Script should be left in RiggingScripts folder for this example to work
-	local ThisScriptLocation = PathConfig.RemovePathLeaf (GetSourceFileName())
-	local ModelsLocation = ThisScriptLocation + "..\\..\\CinematicsBuddyAssets\\Models\\"
-	
 	-- Get meshes and make sure theyre valid before continuing
-	local TheMeshes = ImportProxyMeshes ModelsLocation "WheelProxy.FBX"
-	if TheMeshes.BodyMesh == undefined or TheMeshes.WheelMesh == undefined do
-	(
-		MessageBox("Car body mesh or wheel mesh are invalid")
-		return
-	)
+	local TheMeshes = ImportProxyMeshes()
+	if TheMeshes.BodyMesh == undefined or TheMeshes.WheelMesh == undefined do return false
 	
 	-- Create rig dummies and wheel set
 	local TheRig = GenerateProxyOctaneRig TheMeshes CarInfo
 	
 	-- Bind the new dummy objects to the dummy parent
 	BindProxyOctaneRig TheRig DummyParent
+	
+	return true
 )
 
 --- Run the full script ----
