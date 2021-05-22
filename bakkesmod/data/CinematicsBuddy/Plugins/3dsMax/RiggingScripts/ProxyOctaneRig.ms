@@ -1,6 +1,8 @@
 /*
 	An example script for linking a car model's rig to the CinematicsBuddy car dummy
 	
+	For the most part you should only need to edit the RigCustomization struct at the top to fit the needs of your car model
+	
 	A few general notes:
 		- In order for this script to work, the MESH that you are trying to replace should be selected, not the dummy parent
 		- Maxscript works best if all functions are defined before they are called
@@ -28,6 +30,8 @@ struct RigCustomization
 	-- Which car file to import
 	CarFile = "OctaneProxyBody.FBX",
 	ImportedCarName = "RL_OCTANE_PROXY_BODY",
+	LowerSuspensionRodName = "??????????????????????????",
+	UpperSuspensionRodName = "??????????????????????????",
 	
 	-- Which wheel file to import
 	WheelFile = "WheelProxy.FBX",
@@ -43,7 +47,10 @@ struct RigCustomization
 	BackSuspensionLowerLocation  = [-34.0,  6.0, -4.0],
 	FrontSuspensionUpperLocation = [ 52.5,  7.0,  7.0],
 	BackSuspensionUpperLocation  = [-34.0, 17.5, 16.5],
-	BoostEmitterLocation         = [-47.0,  7.0,  8.0]
+	
+	-- Boost emitter info
+	BoostEmitterLocation = [-47.0,  7.0,  8.0],
+	bIsDoubleEmitter = true
 )
 
 
@@ -266,7 +273,91 @@ function GenerateProxyOctaneRigDummies TheRig CarInfo =
 )
 function GenerateProxyOctaneBoostEmitters TheRig CarInfo = 
 (
+	local CustomizationInfo = RigCustomization()
 	
+	-- Create first boost source
+	local BoostBaseName = CarInfo.CarName + " Boost"
+	local BoostLeftName = BoostBaseName
+	if CustomizationInfo.bIsDoubleEmitter do (BoostLeftName = BoostBaseName + " Left")
+	local BoostLeft = PF_Source name:BoostLeftName pos:CustomizationInfo.BoostEmitterLocation Logo_Size:5 Emitter_Length:6 Emitter_Width:20 X_Coord:20 Y_Coord:0 Quantity_Viewport:100
+	
+	particleFlow.beginEdit()
+	-- EVENT 1: EMISSION
+	Event1 = Event name:(CarInfo.CarName + " Boost Birth")
+	Event1.SetPViewLocation (BoostLeft.X_Coord) (BoostLeft.Y_Coord + 100)
+	
+	-- EVENT 2: DESIGN AND DISPLAY
+	Event2 = Event name:(CarInfo.CarName + " Standard Boost")
+	Event2.SetPViewLocation (BoostLeft.X_Coord) (BoostLeft.Y_Coord + 210)
+	
+	-- EVENT 3: DELETE
+	Event3 = Event name:(CarInfo.CarName + " Age Delete Boost")
+	Event3.SetPViewLocation (BoostLeft.X_Coord) (BoostLeft.Y_Coord + 400)
+	particleFlow.endEdit()
+	
+	-- EVENT 1
+		-- Emitter operator to spawn particles. As soon as they spawn, throw to next event (design and display)
+		particleFlow.beginEdit()
+		OpEmitter     = Birth Type:1 Rate:300 Emit_Start:(AnimationRange.Start as integer) Emit_Stop:(AnimationRange.End as integer)
+		ThrowToEvent2 = Age_Test Test_Value:0 Variation:0
+		particleFlow.endEdit()
+		
+		ThrowToEvent2.SetNextActionList Event2 ThrowToEvent2
+		
+		Event1.AppendAction OpEmitter
+		Event1.AppendAction ThrowToEvent2
+	
+	-- EVENT 2
+		--Design and display particles. After a certain age, throw to next event (delete)
+		particleFlow.beginEdit()
+		OpPosition         = Position_Icon()
+		OpSpeed            = Speed speed:10
+		OpParticleShape    = ShapeLibrary Type_3D:14 size:5
+		ThrowToEvent3      = Age_Test Test_Value:4000 Variation:800
+		OpDisplayParticles = DisplayParticles type:6 color:[255,255,85]
+		particleFlow.endEdit()
+		
+		ThrowToEvent3.SetNextActionList Event3 ThrowToEvent3
+		
+		Event2.AppendAction OpPosition
+		Event2.AppendAction OpSpeed
+		Event2.AppendAction OpParticleShape
+		Event2.AppendAction ThrowToEvent3
+		Event2.AppendAction OpDisplayParticles
+	
+	-- EVENT 3
+		particleFlow.beginEdit()
+		OpDelete = DeleteParticles()
+		particleFlow.endEdit()
+		Event3.AppendAction OpDelete
+	
+	-- Create renderers and caches
+	particleFlow.beginEdit()
+	RendererLeft = RenderParticles name:(CarInfo.CarName + " Render Left")
+	CacheLeft = Cache Use_At:0
+	particleFlow.endEdit()
+	
+	BoostLeft.AppendAction RendererLeft
+	BoostLeft.AppendAction CacheLeft
+	BoostLeft.AppendInitialActionList Event1
+	BoostLeft.rotation.y_rotation = 90
+	append TheRig.BoostEmitters BoostLeft
+	
+	if CustomizationInfo.bIsDoubleEmitter do
+	(
+		local BoostRight = PF_Source name:(BoostBaseName + " Right") pos:(CustomizationInfo.BoostEmitterLocation * [1,-1,1]) Logo_Size:5 Emitter_Length:6 Emitter_Width:20 X_Coord:50 Y_Coord:0 Quantity_Viewport:100
+		
+		particleFlow.beginEdit()
+		RendererRight = RenderParticles name:(CarInfo.CarName + " Render Right")
+		CacheRight = Cache Use_At:0
+		particleFlow.endEdit()
+		
+		BoostRight.AppendAction RendererRight
+		BoostRight.AppendAction CacheRight
+		BoostRight.AppendInitialActionList Event1
+		BoostRight.rotation.y_rotation = 90
+		append TheRig.BoostEmitters BoostRight
+	)
 )
 function GenerateProxyOctaneRig TheMeshes CarInfo = 
 (
@@ -290,17 +381,29 @@ function GenerateProxyOctaneRig TheMeshes CarInfo =
 -----------------
 -- RIG BINDING --
 -----------------
-function MoveRigToParent TheRig DummyParent =
+function ConstrainProxyOctaneRig TheRig = 
+(
+	
+)
+function MoveProxyOctaneRigToParent TheRig DummyParent =
 (
 	-- Move the rig's root object to the DummyParent's location
 	-- Make the rig's root object a child of DummyParent
 )
+function WireProxyOctaneRigParameters TheRig DummyParent = 
+(
+	
+)
 function BindProxyOctaneRig TheRig DummyParent =
 (
+	-- Apply all the internal contstraints before moving to the parent
+	ConstrainProxyOctaneRig TheRig
+	
 	-- Move the rig to the location of DummyParent and set DummyParent as the overall parent object
-	MoveRigToParent TheRig DummyParent
+	MoveProxyOctaneRigToParent TheRig DummyParent
 	
 	-- Wire all of the rig elements to the metadata modifier
+	WireProxyOctaneRigParameters TheRig DummyParent
 )
 
 
