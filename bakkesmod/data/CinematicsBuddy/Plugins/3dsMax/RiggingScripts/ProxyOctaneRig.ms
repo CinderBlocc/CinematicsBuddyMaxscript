@@ -176,6 +176,7 @@ struct ProxyRigOctane
 	BodyMesh   = undefined,
 	WheelMeshes       = #(),
 	BoostEmitters     = #(),
+	WheelRootDummies  = #(),
 	SteeringDummies   = #(),
 	SpinningDummies   = #(),
 	SuspensionLowerDummies = #(),
@@ -249,7 +250,12 @@ function GenerateProxyOctaneRigDummies TheRig CarInfo =
 	
 	-- Create the dummies
 	for i = 1 to 4 do
-	(		
+	(
+		local WheelRootName  = TheRig.WheelMeshes[i].name + " ROOT"
+		local WheelRootDummy = PointHelperObj name:WheelRootName cross:false box:true axistripod:false size:10 wirecolor:CustomizationInfo.DummyColor
+		WheelRootDummy.pos   = WheelLocations[i]
+		append TheRig.WheelRootDummies WheelRootDummy
+		
 		local SteeringName  = TheRig.WheelMeshes[i].name + " STEERING"
 		local SteeringDummy = PointHelperObj name:SteeringName cross:false box:true axistripod:false size:15 wirecolor:CustomizationInfo.DummyColor
 		SteeringDummy.pos   = WheelLocations[i]
@@ -273,6 +279,8 @@ function GenerateProxyOctaneRigDummies TheRig CarInfo =
 )
 function GenerateProxyOctaneBoostEmitters TheRig CarInfo = 
 (
+	local BoostEmitters = #()
+	
 	local CustomizationInfo = RigCustomization()
 	
 	-- Create first boost source
@@ -341,7 +349,7 @@ function GenerateProxyOctaneBoostEmitters TheRig CarInfo =
 	BoostLeft.AppendAction CacheLeft
 	BoostLeft.AppendInitialActionList Event1
 	BoostLeft.rotation.y_rotation = 90
-	append TheRig.BoostEmitters BoostLeft
+	append BoostEmitters BoostLeft
 	
 	if CustomizationInfo.bIsDoubleEmitter do
 	(
@@ -356,8 +364,10 @@ function GenerateProxyOctaneBoostEmitters TheRig CarInfo =
 		BoostRight.AppendAction CacheRight
 		BoostRight.AppendInitialActionList Event1
 		BoostRight.rotation.y_rotation = 90
-		append TheRig.BoostEmitters BoostRight
+		append BoostEmitters BoostRight
 	)
+	
+	TheRig.BoostEmitters = BoostEmitters
 )
 function GenerateProxyOctaneRig TheMeshes CarInfo = 
 (
@@ -375,6 +385,8 @@ function GenerateProxyOctaneRig TheMeshes CarInfo =
 	
 	-- Generate boost emitters
 	GenerateProxyOctaneBoostEmitters TheRig CarInfo
+	
+	return TheRig
 )
 
 
@@ -383,16 +395,93 @@ function GenerateProxyOctaneRig TheMeshes CarInfo =
 -----------------
 function ConstrainProxyOctaneRig TheRig = 
 (
+	/*
+		HIERARCHY (<<Refers to mesh instead of dummy>>)
+		RootObject
+			<<BodyMesh>>
+			BoostEmitters
+			SuspensionUpperDummies (LookAtConstraint: SteeringDummies)
+				<<UpperRodMeshes>>
+			SuspensionLowerDummies
+				WheelRootDummies
+				<<LowerRodMeshes>>
+			SteeringDummies (PositionConstraint: WheelRootDummies)
+				SpinningDummies
+					<<WheelMeshes>>
+	*/
 	
+	-- Parent body mesh to root
+	TheRig.BodyMesh.parent = TheRig.RootObject
+	
+	-- Parent boost emitters to root
+	for i = 1 to TheRig.BoostEmitters.count do
+	(
+		TheRig.BoostEmitters[i].parent = TheRig.RootObject
+	)
+	
+	-- Rig upper suspensions along with upper rod meshes
+	for i = 1 to TheRig.SuspensionUpperDummies.count do
+	(
+		-- Parent suspension to root
+		TheRig.SuspensionUpperDummies[i].parent = TheRig.RootObject
+		
+		-- Assign lookat constraint to point upper suspension at steering dummy
+		TheRig.SuspensionUpperDummies[i].rotation.controller = LookAt_Constraint()
+		local TheController = TheRig.SuspensionUpperDummies[i].rotation.controller
+		TheController.appendTarget TheRig.SteeringDummies[i] 100
+		TheController.lookat_vector_length = 100 -- SET TO 0 WHEN DONE TESTING RIG
+		TheController.target_axis = 2
+		TheController.target_axisFlip = true
+		
+		-- Parent upper rod mesh to suspension dummy
+		-- TODO: Split suspension meshes
+	)
+	
+	-- Rig lower suspensions along with wheel root dummies and lower rod meshes
+	for i = 1 to TheRig.SuspensionLowerDummies.count do
+	(
+		-- Parent suspension to root
+		TheRig.SuspensionLowerDummies[i].parent = TheRig.RootObject
+		
+		-- Parent wheel root to suspension
+		TheRig.WheelRootDummies[i].parent = TheRig.SuspensionLowerDummies[i]
+		
+		-- Parent lower rod mesh to suspension dummy
+		-- TODO: Split suspension meshes
+	)
+	
+	-- Rig steering dummies along with spinning dummies and wheel meshes
+	-- Wheels remain aligned vertically even when the suspension is rotated down, so there's some constraint trickery involved
+	for i = 1 to TheRig.SteeringDummies.count do
+	(
+		-- Parent steering dummy to root
+		TheRig.SteeringDummies[i].parent = TheRig.RootObject
+		
+		-- Override the position constraint to lock to the wheel root position
+		TheRig.SteeringDummies[i].position.controller = Position_Constraint()
+		local TheController = TheRig.SteeringDummies[i].position.controller
+		TheController.appendTarget TheRig.WheelRootDummies[i] 100
+		
+		-- Parent spinning dummy to steering dummy
+		TheRig.SpinningDummies[i].parent = TheRig.SteeringDummies[i]
+		
+		-- Parent wheel mesh to spinning dummy
+		TheRig.WheelMeshes.parent = TheRig.SpinningDummies[i]
+	)
 )
 function MoveProxyOctaneRigToParent TheRig DummyParent =
 (
 	-- Move the rig's root object to the DummyParent's location
+	TheRig.RootObject.pos = DummyParent.pos
+	TheRig.RootObject.rotation = DummyParent.rotation
+	
 	-- Make the rig's root object a child of DummyParent
+	TheRig.RootObject.parent = DummyParent
 )
 function WireProxyOctaneRigParameters TheRig DummyParent = 
 (
-	
+	-- For more information about these paramters, refer to the CarDummy.ms script in the CinematicsBuddy 3dsMax SupportScripts folder
+	local TheModifier = DummyParent.Modifiers[1]
 )
 function BindProxyOctaneRig TheRig DummyParent =
 (
@@ -439,231 +528,3 @@ function ProxyOctaneRigMain =
 --- Run the full script ----
 ProxyOctaneRigMain() ----
 ----------------------------
-
-
-
-
-/*
-function importCar carNum = 
-(
-	deselect selection
-	ImportFile "F:\\_YouTube\\04_Extra_Assets\\3D_Models_and_Scenes\\Rocket_League_Models\\Car_Octane_Rigged.FBX" #noPrompt
-	for obj in selection do
-	(
-		obj.scale = [1, 1, 1]
-		carNumString = carNum as string
-		baseName = obj.name
-		newName = "TEMPIMPORT_" + baseName
-		obj.name = newName
-	)
-	
-	--HELPER CREATION
-	tempHelpers = #()
-	tempHelperName = "TEMPHELPER"
-	helperName = tempHelperName + 1 as string
-	tempHelpers[1] = PointHelperObj name:helperName cross: true box: false size: 100 wirecolor:[14,255,2] --core helper
-	for j=2 to 5 do (
-		helperName = tempHelperName + j as string
-		tempHelpers[j] = PointHelperObj name:helperName cross: false box: true size: 10 wirecolor:[14,255,2]
-	) --axel helper
-	for j=6 to 9 do (
-		helperName = tempHelperName + j as string
-		tempHelpers[j] = PointHelperObj name:helperName cross: false box: true size: 7.5 wirecolor:[14,255,2]
-	) --spring helper
-	for j=10 to 13 do (
-		helperName = tempHelperName + j as string
-		tempHelpers[j] = PointHelperObj name:helperName cross: true box: false size: 5 wirecolor:[14,255,2]
-	) --cup helper
-	for j=14 to 17 do (
-		helperName = tempHelperName + j as string
-		tempHelpers[j] = PointHelperObj name:helperName cross: false box: true size: 30 wirecolor:[14,255,2]
-	) --wheel helper
-	append carHelpers tempHelpers
-	--format "carHelpers.count = %\n" carHelpers.count as string
-	
-	--CAR PART STORING
-	tempParts = #()
-	tempParts[1] = $TEMPIMPORT_RL_OCTANE_CLEAN
-	tempParts[2] = $TEMPIMPORT_FL_Axel
-	tempParts[3] = $TEMPIMPORT_FR_Axel
-	tempParts[4] = $TEMPIMPORT_BL_Axel
-	tempParts[5] = $TEMPIMPORT_BR_Axel
-	tempParts[6] = $TEMPIMPORT_FL_Spring
-	tempParts[7] = $TEMPIMPORT_FR_Spring
-	tempParts[8] = $TEMPIMPORT_BL_Spring
-	tempParts[9] = $TEMPIMPORT_BR_Spring
-	tempParts[10] = $TEMPIMPORT_FL_Cup
-	tempParts[11] = $TEMPIMPORT_FR_Cup
-	tempParts[12] = $TEMPIMPORT_BL_Cup
-	tempParts[13] = $TEMPIMPORT_BR_Cup
-	tempParts[14] = $TEMPIMPORT_FL_Brakes
-	tempParts[15] = $TEMPIMPORT_FR_Brakes
-	tempParts[16] = $TEMPIMPORT_BL_Brakes
-	tempParts[17] = $TEMPIMPORT_BR_Brakes
-	tempParts[18] = $TEMPIMPORT_FL_Wheel
-	tempParts[19] = $TEMPIMPORT_FR_Wheel
-	tempParts[20] = $TEMPIMPORT_BL_Wheel
-	tempParts[21] = $TEMPIMPORT_BR_Wheel
-	append carParts tempParts
-	
-	--MAKING PFLOW
-	--(
-	individualCarBoosts = #()
-	tempBoost = PF_Source name:"TEMPBOOST1" pos:[-48,9,9] Logo_Size:5 Emitter_Length:6 Emitter_Width:20 X_Coord:20 Y_Coord:0 Quantity_Viewport:100
-	append individualCarBoosts tempBoost
-	tempBoost = PF_Source name:"TEMPBOOST2" pos:[-48,-9,9] Logo_Size:5 Emitter_Length:6 Emitter_Width:20 X_Coord:50 Y_Coord:0 Quantity_Viewport:100
-	append individualCarBoosts tempBoost
-	individualCarBoosts[1].rotation.y_rotation = 90
-	individualCarBoosts[2].rotation.y_rotation = 90
-	individualCarBoosts[1].parent = tempParts[1]
-	individualCarBoosts[2].parent = tempParts[1]
-	particleFlow.BeginEdit()
-	cache1 = Cache Use_At:0
-	cache2 = Cache Use_At:0
-	op1 = Birth Type:1 Rate:300 Emit_Start:(animationRange.start as integer) Emit_Stop:(animationRange.end as integer)
-	swapOp = Age_Test Test_Value:0 Variation:0
-	op2 = Position_Icon()
-	op3 = Speed speed:10
-	op4 = ShapeLibrary Type_3D:14 size:5
-	renderer1 = RenderParticles name:"Render Car 1 Boost 1"
-	renderer2 = RenderParticles name:"Render Car 1 Boost 2"
-	op5 = Age_Test Test_Value:4000 Variation:800
-	op6 = DisplayParticles type:6 color:[255,255,85]
-	ev1 = Event name:"Boost Birth"
-	ev1.SetPViewLocation (individualCarBoosts[1].X_Coord) (individualCarBoosts[1].Y_Coord+100)
-	ev2 =Event name:"Standard Boost"
-	ev2.SetPViewLocation (individualCarBoosts[1].X_Coord) (individualCarBoosts[1].Y_Coord+210)
-	ev3 = Event name:"Age Delete Boost"
-	ev3.SetPViewLocation (individualCarBoosts[1].X_Coord) (individualCarBoosts[1].Y_Coord+400)
-	ev3op1 = deleteParticles()
-	particleFlow.EndEdit()
-	
-	--ev1.AppendAction op0
-	ev1.AppendAction op1
-	ev1.AppendAction swapOp
-	ev2.AppendAction op2
-	ev2.AppendAction op3
-	ev2.AppendAction op4
-	ev2.AppendAction op5
-	ev2.AppendAction op6
-	swapOp.setNextActionList ev2 swapOp
-	ev3.AppendAction ev3op1
-	op5.setNextActionList ev3 op5
-	
-	individualCarBoosts[1].AppendAction renderer1
-	individualCarBoosts[1].AppendAction cache1
-	individualCarBoosts[1].AppendInitialActionList ev1
-	individualCarBoosts[2].AppendAction renderer2
-	individualCarBoosts[2].AppendAction cache2
-	individualCarBoosts[2].AppendInitialActionList ev1
-	
-	append carBoosts individualCarBoosts
-	
-	--)
-
-	--MAKING CUSTOM BOOST ATTRIBUTES
-	--(
-	BoostControls = attributes boostControlAttributes
-	(
-		parameters params rollout:ro_BoostControls
-		(
-			isBoosting type:#integer ui:boostctrlActive
-			boostRate type:#integer ui:boostctrlRate
-			hasJumped type:#integer ui:boostctrlJumped
-		)
-		rollout ro_BoostControls "Boost and Jump Controls"
-		(
-			spinner boostctrlRate "Boost rate: " pos:[-7,5] range:[0,1000000,60] type:#integer width:160
-			slider boostctrlActive "Is Boosting" pos:[2,25] range:[0,1,0] type:#integer width:165
-			slider boostctrlJumped "Has Jumped" pos:[2,77] range:[0,1,0] type:#integer width:165
-		)
-	)
-
-	custAttributes.add tempHelpers[1] BoostControls --BaseObject:true
-	tempHelpers[1].boostControlAttributes.boostRate.controller = bezier_float()
-	tempHelpers[1].boostControlAttributes.boostRate.controller.value = 300
-	tempHelpers[1].boostControlAttributes.isBoosting.controller = boolean_float()
-	tempHelpers[1].boostControlAttributes.hasJumped.controller = boolean_float()
-	
-	
-	
-	SuspensionControls = attributes suspensionControlAttributes
-	(
-		parameters params rollout:ro_SuspensionControls
-		(
-			suspensionMaxAmount type:#integer ui:susMaxAmount
-			suspensionPitch type:#float ui:susPitch
-			suspensionRoll type:#float ui:susRoll
-		)
-		rollout ro_SuspensionControls "Suspension Controls"
-		(
-			spinner susMaxAmount "Max Suspension: " pos:[7,5] range:[0,10,0] type:#float width:150
-			slider susPitch "Pitch" pos:[2,25] range:[-1,1,0] type:#float width:165
-			slider susRoll "Roll" pos:[2,77] range:[-1,1,0] type:#float width:165
-		)
-	)
-
-	custAttributes.add tempHelpers[1] SuspensionControls --BaseObject:true
-	tempHelpers[1].suspensionControlAttributes.suspensionMaxAmount.controller = bezier_float()
-	tempHelpers[1].suspensionControlAttributes.suspensionMaxAmount.controller.value = 0
-	tempHelpers[1].suspensionControlAttributes.suspensionPitch.controller = bezier_float()
-	tempHelpers[1].suspensionControlAttributes.suspensionRoll.controller = bezier_float()
-	--)
-
-
-
-	
-	-- Align and parent helper objects to individual parts
-	for p=1 to carHelpers[carNum].count do
-	(
-		carHelpers[carNum][p].pos = carParts[carNum][p].pos
-		carParts[carNum][p].parent = carHelpers[carNum][p]
-	)
-	for p=2 to 5 do (carHelpers[carNum][p].parent = carHelpers[carNum][1]) -- Parent axel helpers to core helper
-	for p=10 to 13 do (carHelpers[carNum][p].parent = carHelpers[carNum][1]) -- Parent cup helpers to core helper
-	for p=6 to 9 do(carHelpers[carNum][p].parent = carHelpers[carNum][p-4]) -- Parent spring helpers to corresponding axel helper
-	for p=14 to 17 do (carHelpers[carNum][p].parent = carHelpers[carNum][p-12]) -- Parent wheel helpers to corresponding axel helper
-	for p=18 to 21 do (carParts[carNum][p].parent = carHelpers[carNum][p-4]) -- Parent wheels to corresponding wheel helpers
-	
-	-- Assign lookat to cup models
-	for p=10 to 13 do
-	(
-		carParts[carNum][p].rotation.controller = LookAt_Constraint()
-		carParts[carNum][p].rotation.controller.appendTarget carHelpers[carNum][p-4] 100
-		carParts[carNum][p].rotation.controller.lookat_vector_length = 0
-		carParts[carNum][p].rotation.controller.target_axis = 2
-		carParts[carNum][p].rotation.controller.target_axisFlip = true
-	)
-	
-	-- Assign lookat to spring models
-	for p=6 to 9 do
-	(
-		carParts[carNum][p].rotation.controller = LookAt_Constraint()
-		carParts[carNum][p].rotation.controller.appendTarget carHelpers[carNum][p+4] 100
-		carParts[carNum][p].rotation.controller.lookat_vector_length = 0
-		carParts[carNum][p].rotation.controller.target_axis = 2
-	)
-	
-	for obj in carParts[carNum] do
-	(
-		baseName = obj.name
-		--format "baseName: % -- " obj.name
-		newName = replace baseName 1 10 ("Car_" + carNum as string)
-		obj.name = newName
-		--format "newName: %\n" newName
-	)
-	
-	for p=1 to carHelpers[carNum].count do
-	(
-		carHelpers[carNum][p].name = carParts[carNum][p].name + "_Helper"
-		--format "helper name: %\n" carHelpers[carNum][p].name
-	)
-	
-	carBoosts[carNum][1].name = ("Car_" + carNum as string + "Boost_1")
-	carBoosts[carNum][2].name = ("Car_" + carNum as string + "Boost_2")
-	
-	deselect selection
-	
-	--carNum += 1
-)
-*/
