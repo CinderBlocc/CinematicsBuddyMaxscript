@@ -30,8 +30,12 @@ struct RigCustomization
 	-- Which car file to import
 	CarFile = "OctaneProxyBody.FBX",
 	ImportedCarName = "RL_OCTANE_PROXY_BODY",
-	LowerSuspensionRodName = "??????????????????????????",
-	UpperSuspensionRodName = "??????????????????????????",
+	LowerSuspensionRodName = ImportedCarName + " SUSPENSION_LOWER",
+	UpperSuspensionRodName = ImportedCarName + " SUSPENSION_UPPER",
+	FrontQualifier = " FRONT",
+	BackQualifier  = " BACK",
+	LeftQualifier  = " LEFT",
+	RightQualifier = " RIGHT",
 	
 	-- Which wheel file to import
 	WheelFile = "WheelProxy.FBX",
@@ -180,7 +184,9 @@ struct ProxyRigOctane
 	SteeringDummies   = #(),
 	SpinningDummies   = #(),
 	SuspensionLowerDummies = #(),
-	SuspensionUpperDummies = #()
+	SuspensionUpperDummies = #(),
+	SuspensionLowerMeshes  = #(),
+	SuspensionUpperMeshes  = #()
 )
 function ProxyRigMirrorObject ObjectToMirror OriginalObject bInvertScale =
 (
@@ -216,6 +222,30 @@ function ProxyRigPlaceWheels TheMeshes TheRig CarInfo =
 	ProxyRigMirrorObject TheRig.WheelMeshes[4] TheRig.WheelMeshes[3] true
 	TheRig.WheelMeshes[3].scale *= [BackScaleRatio, 1, BackScaleRatio]
 	TheRig.WheelMeshes[4].scale *= [BackScaleRatio, 1, BackScaleRatio]
+)
+function ProxyRigGetSuspensions TheRig = 
+(
+	local CI = RigCustomization()
+	
+	-- Get the meshes by the names specified in the customization at the top
+	local SuspensionLowerMeshes = #()
+	local SuspensionUpperMeshes = #()
+	local FrontBack = #(CI.FrontQualifier, CI.BackQualifier)
+	local LeftRight = #(CI.LeftQualifier, CI.RightQualifier)
+	
+	for FrontBackIdx = 1 to 2 do
+	(
+		for LeftRightIdx = 1 to 2 do
+		(
+			local LowerRod = GetNodeByName(CI.LowerSuspensionRodName + FrontBack[FrontBackIdx] + LeftRight[LeftRightIdx])
+			local UpperRod = GetNodeByName(CI.UpperSuspensionRodName + FrontBack[FrontBackIdx] + LeftRight[LeftRightIdx])
+			append SuspensionLowerMeshes LowerRod
+			append SuspensionUpperMeshes UpperRod
+		)
+	)
+	
+	TheRig.SuspensionLowerMeshes = SuspensionLowerMeshes
+	TheRig.SuspensionUpperMeshes = SuspensionUpperMeshes
 )
 function GenerateProxyOctaneRigDummies TheRig CarInfo = 
 (
@@ -380,6 +410,9 @@ function GenerateProxyOctaneRig TheMeshes CarInfo =
 	-- Put the wheel meshes in the right places and name them
 	ProxyRigPlaceWheels TheMeshes TheRig CarInfo
 	
+	-- Store a reference to all of the suspension rod meshes
+	ProxyRigGetSuspensions TheRig
+	
 	-- Generate all of the necessary dummy objects
 	GenerateProxyOctaneRigDummies TheRig CarInfo
 	
@@ -408,15 +441,29 @@ function ConstrainProxyOctaneRig TheRig =
 			SteeringDummies (PositionConstraint: WheelRootDummies)
 				SpinningDummies
 					<<WheelMeshes>>
+		
+		TRANSFORM LOCK FLAGS
+		1: POS_X
+		2: POS_Y
+		3: POS_Z
+		4: ROT_X
+		5: ROT_Y
+		6: ROT_Z
+		7: SCALE_X
+		8: SCALE_Y
+		9: SCALE_Z
 	*/
 	
 	-- Parent body mesh to root
 	TheRig.BodyMesh.parent = TheRig.RootObject
+	SetTransformLockFlags TheRig.BodyMesh #all
+	SetTransformLockFlags TheRig.RootObject #all
 	
 	-- Parent boost emitters to root
 	for i = 1 to TheRig.BoostEmitters.count do
 	(
 		TheRig.BoostEmitters[i].parent = TheRig.RootObject
+		SetTransformLockFlags TheRig.BoostEmitters[i] #all
 	)
 	
 	-- Rig upper suspensions along with upper rod meshes
@@ -429,12 +476,16 @@ function ConstrainProxyOctaneRig TheRig =
 		TheRig.SuspensionUpperDummies[i].rotation.controller = LookAt_Constraint()
 		local TheController = TheRig.SuspensionUpperDummies[i].rotation.controller
 		TheController.appendTarget TheRig.SteeringDummies[i] 100
-		TheController.lookat_vector_length = 100 -- SET TO 0 WHEN DONE TESTING RIG
+		TheController.lookat_vector_length = 0
 		TheController.target_axis = 2
 		TheController.target_axisFlip = true
 		
 		-- Parent upper rod mesh to suspension dummy
-		-- TODO: Split suspension meshes
+		TheRig.SuspensionUpperMeshes[i].parent = TheRig.SuspensionUpperDummies[i]
+		
+		-- Lock transforms
+		SetTransformLockFlags TheRig.SuspensionUpperDummies[i] #{1,2,3,5,6,7,8,9}
+		SetTransformLockFlags TheRig.SuspensionUpperMeshes[i] #all
 	)
 	
 	-- Rig lower suspensions along with wheel root dummies and lower rod meshes
@@ -447,7 +498,12 @@ function ConstrainProxyOctaneRig TheRig =
 		TheRig.WheelRootDummies[i].parent = TheRig.SuspensionLowerDummies[i]
 		
 		-- Parent lower rod mesh to suspension dummy
-		-- TODO: Split suspension meshes
+		TheRig.SuspensionLowerMeshes[i].parent = TheRig.SuspensionLowerDummies[i]
+		
+		-- Lock transforms
+		SetTransformLockFlags TheRig.SuspensionLowerDummies[i] #{1,2,3,5,6,7,8,9}
+		SetTransformLockFlags TheRig.WheelRootDummies[i] #all
+		SetTransformLockFlags TheRig.SuspensionLowerMeshes[i] #all
 	)
 	
 	-- Rig steering dummies along with spinning dummies and wheel meshes
@@ -466,7 +522,12 @@ function ConstrainProxyOctaneRig TheRig =
 		TheRig.SpinningDummies[i].parent = TheRig.SteeringDummies[i]
 		
 		-- Parent wheel mesh to spinning dummy
-		TheRig.WheelMeshes.parent = TheRig.SpinningDummies[i]
+		TheRig.WheelMeshes[i].parent = TheRig.SpinningDummies[i]
+		
+		-- Lock transforms
+		SetTransformLockFlags TheRig.SteeringDummies[i] #{1,2,3,4,5,7,8,9}
+		SetTransformLockFlags TheRig.SpinningDummies[i] #{1,2,3,4,6,7,8,9}
+		SetTransformLockFlags TheRig.WheelMeshes[i] #all
 	)
 )
 function MoveProxyOctaneRigToParent TheRig DummyParent =
@@ -482,6 +543,8 @@ function WireProxyOctaneRigParameters TheRig DummyParent =
 (
 	-- For more information about these paramters, refer to the CarDummy.ms script in the CinematicsBuddy 3dsMax SupportScripts folder
 	local TheModifier = DummyParent.Modifiers[1]
+	
+	
 )
 function BindProxyOctaneRig TheRig DummyParent =
 (
