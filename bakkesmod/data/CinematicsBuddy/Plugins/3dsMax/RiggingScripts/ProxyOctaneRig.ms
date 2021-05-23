@@ -224,7 +224,7 @@ function ProxyRigPlaceWheels TheMeshes TheRig CarInfo =
 	TheRig.WheelMeshes[3].scale *= [BackScaleRatio, 1, BackScaleRatio]
 	TheRig.WheelMeshes[4].scale *= [BackScaleRatio, 1, BackScaleRatio]
 )
-function ProxyRigGetSuspensions TheRig = 
+function ProxyRigGetSuspensions TheRig CarInfo = 
 (
 	local CI = RigCustomization()
 	
@@ -240,6 +240,10 @@ function ProxyRigGetSuspensions TheRig =
 		(
 			local LowerRod = GetNodeByName(CI.LowerSuspensionRodName + FrontBack[FrontBackIdx] + LeftRight[LeftRightIdx])
 			local UpperRod = GetNodeByName(CI.UpperSuspensionRodName + FrontBack[FrontBackIdx] + LeftRight[LeftRightIdx])
+			
+			LowerRod.name = CarInfo.CarName + " LOWERSUSPENSIONROD" + FrontBack[FrontBackIdx] + LeftRight[LeftRightIdx]
+			UpperRod.name = CarInfo.CarName + " UPPERSUSPENSIONROD" + FrontBack[FrontBackIdx] + LeftRight[LeftRightIdx]
+			
 			append SuspensionLowerMeshes LowerRod
 			append SuspensionUpperMeshes UpperRod
 		)
@@ -412,7 +416,7 @@ function GenerateProxyOctaneRig TheMeshes CarInfo =
 	ProxyRigPlaceWheels TheMeshes TheRig CarInfo
 	
 	-- Store a reference to all of the suspension rod meshes
-	ProxyRigGetSuspensions TheRig
+	ProxyRigGetSuspensions TheRig CarInfo
 	
 	-- Generate all of the necessary dummy objects
 	GenerateProxyOctaneRigDummies TheRig CarInfo
@@ -610,7 +614,25 @@ function WireProxyOctaneRigParameters TheRig DummyParent =
 	BoostScript.Script = "if bIsBoosting then BoostRate else 0"
 	BoostEmitter.rate.controller = BoostScript
 	
-	
+	-- Wire wheels
+	for i = 1 to TheRig.WheelRootDummies.count do
+	(
+		-- SteerAmount
+		local SteerScript = Float_Script()
+		SteerScript.AddTarget "SteerAmount" TheControllers.SteerAmount[i]
+		SteerScript.Script = "SteerAmount"
+		TheRig.SteeringDummies[i].rotation.z_rotation.controller = SteerScript
+		
+		-- SuspensionDistance
+		local SuspensionScript = Float_Script()
+		SuspensionScript.AddTarget "SuspensionDistance" TheControllers.SuspensionDistance[i]
+		local ModResult = mod i 2
+		if ModResult == 0 then ( SuspensionScript.Script = "SuspensionDistance / 57.2958" )
+		else ( SuspensionScript.Script = "SuspensionDistance / -57.2958" )
+		TheRig.SuspensionLowerDummies[i].rotation.x_rotation.controller = SuspensionScript
+		
+		-- SpinSpeed (needs to be baked into keyframes)
+	)
 )
 function BindProxyOctaneRig TheRig DummyParent =
 (
