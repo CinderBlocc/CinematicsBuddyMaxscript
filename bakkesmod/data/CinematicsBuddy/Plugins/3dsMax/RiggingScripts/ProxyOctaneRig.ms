@@ -54,6 +54,7 @@ struct RigCustomization
 	
 	-- Boost emitter info
 	BoostEmitterLocation = [-47.0,  7.0,  8.0],
+	BoostRateDefault = 300,
 	bIsDoubleEmitter = true
 )
 
@@ -426,6 +427,13 @@ function GenerateProxyOctaneRig TheMeshes CarInfo =
 -----------------
 -- RIG BINDING --
 -----------------
+struct ProxyOctaneMetadataControllers
+(
+	bIsBoosting,
+	SteerAmount        = #(),
+	SuspensionDistance = #(),
+	SpinSpeed          = #()
+)
 function ConstrainProxyOctaneRig TheRig = 
 (
 	/*
@@ -539,10 +547,68 @@ function MoveProxyOctaneRigToParent TheRig DummyParent =
 	-- Make the rig's root object a child of DummyParent
 	TheRig.RootObject.parent = DummyParent
 )
+function AddBoostModifierToDummyParent DummyParent = 
+(
+	local CustomizationInfo = RigCustomization()
+	
+	local TheModifier = EmptyModifier()
+	TheModifier.name = "Boost Data"
+	BoostDataModifier = attributes BoostDataAttributes
+	(
+		parameters boostdataparams rollout:ro_boostdata
+		(
+			BoostRate type:#float ui:SpinnerBoostRate
+		)
+		rollout ro_boostdata "Boost"
+		(
+			spinner SpinnerBoostRate "Boost Rate" range:[0,2000,0] type:#float
+		)
+	)
+	CustAttributes.Add TheModifier BoostDataModifier
+	TheModifier.BoostRate.controller = bezier_float()
+	TheModifier.BoostRate.controller.value = CustomizationInfo.BoostRateDefault
+	
+	AddModifier DummyParent TheModifier before:1
+)
+function GetProxyOctaneMetadataControllers DummyParent = 
+(
+	local TheControllers = ProxyOctaneMetadataControllers()
+	
+	local TheModifier = DummyParent.Modifiers[1]
+	TheControllers.bIsBoosting = TheModifier.bIsBoosting.controller
+	append TheControllers.SteerAmount TheModifier.Wheel0_SteerAmount.controller
+	append TheControllers.SteerAmount TheModifier.Wheel1_SteerAmount.controller
+	append TheControllers.SteerAmount TheModifier.Wheel2_SteerAmount.controller
+	append TheControllers.SteerAmount TheModifier.Wheel3_SteerAmount.controller
+	append TheControllers.SuspensionDistance TheModifier.Wheel0_SuspensionDist.controller
+	append TheControllers.SuspensionDistance TheModifier.Wheel1_SuspensionDist.controller
+	append TheControllers.SuspensionDistance TheModifier.Wheel2_SuspensionDist.controller
+	append TheControllers.SuspensionDistance TheModifier.Wheel3_SuspensionDist.controller
+	append TheControllers.SpinSpeed TheModifier.Wheel0_SpinSpeed.controller
+	append TheControllers.SpinSpeed TheModifier.Wheel1_SpinSpeed.controller
+	append TheControllers.SpinSpeed TheModifier.Wheel2_SpinSpeed.controller
+	append TheControllers.SpinSpeed TheModifier.Wheel3_SpinSpeed.controller
+	
+	return TheControllers
+)
 function WireProxyOctaneRigParameters TheRig DummyParent = 
 (
 	-- For more information about these paramters, refer to the CarDummy.ms script in the CinematicsBuddy 3dsMax SupportScripts folder
-	local TheModifier = DummyParent.Modifiers[1]
+	local AnimationModifier = DummyParent.Modifiers[1]
+	local BoostModifier = DummyParent.Modifiers[2]
+	local CustomizationInfo = RigCustomization()
+	
+	-- Get the arrays of controllers for easier iteration
+	local TheControllers = GetProxyOctaneMetadataControllers DummyParent
+	
+	-- Wire boosting controller
+	local BoostParticleSystem = TheRig.BoostEmitters[1].GetInitialActionList 1
+	local BoostEmitter = BoostParticleSystem.GetAction 1
+	local BoostScript  = Float_Script()
+	BoostScript.AddTarget "bIsBoosting" TheControllers.bIsBoosting
+	BoostScript.AddTarget "BoostRate" BoostModifier.BoostRate.controller
+	BoostScript.Script = "if bIsBoosting then BoostRate else 0"
+	BoostEmitter.rate.controller = BoostScript
 	
 	
 )
@@ -553,6 +619,9 @@ function BindProxyOctaneRig TheRig DummyParent =
 	
 	-- Move the rig to the location of DummyParent and set DummyParent as the overall parent object
 	MoveProxyOctaneRigToParent TheRig DummyParent
+	
+	-- Add boost modifier to control boost rate
+	AddBoostModifierToDummyParent DummyParent
 	
 	-- Wire all of the rig elements to the metadata modifier
 	WireProxyOctaneRigParameters TheRig DummyParent
