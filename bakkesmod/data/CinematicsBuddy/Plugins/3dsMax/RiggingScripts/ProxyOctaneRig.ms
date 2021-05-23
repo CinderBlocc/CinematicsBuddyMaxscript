@@ -55,6 +55,10 @@ struct RigCustomization
 	-- Boost emitter info
 	BoostEmitterLocation = [-47.0,  7.0,  8.0],
 	BoostRateDefault = 300,
+	BoostDurationSeconds = 1.5,
+	BoostDurationVariationSeconds = 0.2,
+	EmitterLength = 6,
+	EmitterWidth = 20,
 	bIsDoubleEmitter = true
 )
 
@@ -316,13 +320,16 @@ function GenerateProxyOctaneBoostEmitters TheRig CarInfo =
 (
 	local BoostEmitters = #()
 	
-	local CustomizationInfo = RigCustomization()
+	local CI = RigCustomization()
 	
 	-- Create first boost source
 	local BoostBaseName = CarInfo.CarName + " Boost"
 	local BoostLeftName = BoostBaseName
-	if CustomizationInfo.bIsDoubleEmitter do (BoostLeftName = BoostBaseName + " Left")
-	local BoostLeft = PF_Source name:BoostLeftName pos:CustomizationInfo.BoostEmitterLocation Logo_Size:5 Emitter_Length:6 Emitter_Width:20 X_Coord:20 Y_Coord:0 Quantity_Viewport:100
+	if CI.bIsDoubleEmitter do (BoostLeftName = BoostBaseName + " Left")
+	local LogoSize = 10
+	if CI.EmitterLength < CI.EmitterWidth then ( LogoSize = CI.EmitterLength )
+	else ( LogoSize = CI.EmitterWidth )
+	local BoostLeft = PF_Source name:BoostLeftName pos:CI.BoostEmitterLocation Logo_Size:LogoSize Emitter_Length:CI.EmitterLength Emitter_Width:CI.EmitterWidth X_Coord:20 Y_Coord:0 Quantity_Viewport:100
 	
 	particleFlow.beginEdit()
 	-- EVENT 1: EMISSION
@@ -351,12 +358,13 @@ function GenerateProxyOctaneBoostEmitters TheRig CarInfo =
 		Event1.AppendAction ThrowToEvent2
 	
 	-- EVENT 2
-		--Design and display particles. After a certain age, throw to next event (delete)
+		-- Design and display particles. After a certain age, throw to next event (delete)
+		-- Note: Test values for age are done via tick. 3ds max has 4800 ticks per second
 		particleFlow.beginEdit()
 		OpPosition         = Position_Icon()
 		OpSpeed            = Speed speed:10
 		OpParticleShape    = ShapeLibrary Type_3D:14 size:5
-		ThrowToEvent3      = Age_Test Test_Value:4000 Variation:800
+		ThrowToEvent3      = Age_Test Test_Value:(4800 * CI.BoostDurationSeconds) Variation:(4800 * CI.BoostDurationVariationSeconds)
 		OpDisplayParticles = DisplayParticles type:6 color:[255,255,85]
 		particleFlow.endEdit()
 		
@@ -386,9 +394,9 @@ function GenerateProxyOctaneBoostEmitters TheRig CarInfo =
 	BoostLeft.rotation.y_rotation = 90
 	append BoostEmitters BoostLeft
 	
-	if CustomizationInfo.bIsDoubleEmitter do
+	if CI.bIsDoubleEmitter do
 	(
-		local BoostRight = PF_Source name:(BoostBaseName + " Right") pos:(CustomizationInfo.BoostEmitterLocation * [1,-1,1]) Logo_Size:5 Emitter_Length:6 Emitter_Width:20 X_Coord:50 Y_Coord:0 Quantity_Viewport:100
+		local BoostRight = PF_Source name:(BoostBaseName + " Right") pos:(CI.BoostEmitterLocation * [1,-1,1]) Logo_Size:LogoSize Emitter_Length:CI.EmitterLength Emitter_Width:CI.EmitterWidth X_Coord:50 Y_Coord:0 Quantity_Viewport:100
 		
 		particleFlow.beginEdit()
 		RendererRight = RenderParticles name:(CarInfo.CarName + " Render Right")
@@ -487,10 +495,12 @@ function ConstrainProxyOctaneRig TheRig =
 		-- Assign lookat constraint to point upper suspension at steering dummy
 		TheRig.SuspensionUpperDummies[i].rotation.controller = LookAt_Constraint()
 		local TheController = TheRig.SuspensionUpperDummies[i].rotation.controller
-		TheController.appendTarget TheRig.SteeringDummies[i] 100
+		TheController.appendTarget TheRig.WheelRootDummies[i] 100
 		TheController.lookat_vector_length = 0
 		TheController.target_axis = 2
 		TheController.target_axisFlip = true
+		TheController.upnode_world = false
+		TheController.pickUpNode = TheRig.RootObject
 		
 		-- Parent upper rod mesh to suspension dummy
 		TheRig.SuspensionUpperMeshes[i].parent = TheRig.SuspensionUpperDummies[i]
@@ -544,9 +554,9 @@ function ConstrainProxyOctaneRig TheRig =
 )
 function MoveProxyOctaneRigToParent TheRig DummyParent =
 (
-	-- Move the rig's root object to the DummyParent's location
-	TheRig.RootObject.pos = DummyParent.pos
+	-- Move the rig's root object to the DummyParent's transform
 	TheRig.RootObject.rotation = DummyParent.rotation
+	TheRig.RootObject.pos = DummyParent.pos
 	
 	-- Make the rig's root object a child of DummyParent
 	TheRig.RootObject.parent = DummyParent
@@ -620,7 +630,7 @@ function WireProxyOctaneRigParameters TheRig DummyParent =
 		-- SteerAmount
 		local SteerScript = Float_Script()
 		SteerScript.AddTarget "SteerAmount" TheControllers.SteerAmount[i]
-		SteerScript.Script = "SteerAmount"
+		SteerScript.Script = "SteerAmount * -1.0"
 		TheRig.SteeringDummies[i].rotation.z_rotation.controller = SteerScript
 		
 		-- SuspensionDistance
@@ -630,9 +640,27 @@ function WireProxyOctaneRigParameters TheRig DummyParent =
 		if ModResult == 0 then ( SuspensionScript.Script = "SuspensionDistance / 57.2958" )
 		else ( SuspensionScript.Script = "SuspensionDistance / -57.2958" )
 		TheRig.SuspensionLowerDummies[i].rotation.x_rotation.controller = SuspensionScript
-		
-		-- SpinSpeed (needs to be baked into keyframes)
 	)
+	
+	-- Bake spin speed into keyframes
+	local DeltaTime = 1.0 / (framerate as float)
+	local PreviousRotationValues = #(0.0, 0.0, 0.0, 0.0)
+	set animate on
+	for CurrentFrame = AnimationRange.Start to AnimationRange.End do
+	(
+		at time CurrentFrame
+		(
+			for i = 1 to TheRig.SpinningDummies.count do
+			(
+				local CurrentSpinSpeed = TheControllers.SpinSpeed[i].value
+				local NewValue = PreviousRotationValues[i] + CurrentSpinSpeed * DeltaTime * 57.2958
+				
+				TheRig.SpinningDummies[i].rotation.y_rotation.controller.value = NewValue
+				PreviousRotationValues[i] = NewValue
+			)
+		)
+	)
+	set animate off
 )
 function BindProxyOctaneRig TheRig DummyParent =
 (
