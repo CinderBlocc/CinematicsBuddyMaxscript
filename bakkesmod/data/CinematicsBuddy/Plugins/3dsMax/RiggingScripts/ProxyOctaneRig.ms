@@ -10,7 +10,7 @@
 			- Start from ProxyOctaneRigMain and trace through the functions called in that function
 		- The script is filled with basic comments to help those with limited programming experience tailor the script to their needs
 		- All mesh files are assumed to be in the /CinematicsBuddyAssets/Models/ folder
-			- You can change that in the ProxyOctaneRigMain function if you want to use a different folder
+			- You can change that in the RigCustomization struct function if you want to use a different folder
 		- Wheels indices are as follows:
 			- 1 (0 in UI): Front left
 			- 2 (1 in UI): Front right
