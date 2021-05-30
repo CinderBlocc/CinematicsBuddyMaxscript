@@ -138,7 +138,7 @@ function GetReplayMetadata ImportedFile =
 (
 	local ReplayMetadata = StructReplayMetadata()
 	
-	-- Skip "REPLAY METADATA" header, or return empty data if that header doesn't exist
+	-- Skip "REPLAY METADATA" header
 	if (DoesSectionExist ImportedFile "*REPLAY METADATA*") == false do
 	(
 		format "Could not find REPLAY METADATA section\n"
