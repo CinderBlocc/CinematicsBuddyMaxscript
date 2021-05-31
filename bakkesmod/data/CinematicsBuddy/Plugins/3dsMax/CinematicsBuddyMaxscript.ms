@@ -4,7 +4,7 @@
 	-- Exports rebuilt scene to an animated FBX file to be transferred to other 3D software
 
 -- Information about the script
-global CBScriptVersion = "0.9.9e"
+global CBScriptVersion = "1.0"
 
 -- Get relative paths
 global CBScriptLocation = PathConfig.RemovePathLeaf (GetSourceFileName()) + "\\"
